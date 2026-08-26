@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ArrowRight, Sparkle } from '@phosphor-icons/react'
 import { api, readableError, type Stats, type Health } from '../api'
-import { Card, Button, StatTile, SectionTitle, DemoNote, NmcTag, OrgChip } from '../components/ui'
+import { Card, Button, StatTile, SectionTitle, DemoNote } from '../components/ui'
 
 /**
  * 01 — Home.

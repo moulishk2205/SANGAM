@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowLeft, Buildings, ArrowRight } from '@phosphor-icons/react'
+import { ArrowLeft, Buildings } from '@phosphor-icons/react'
 import { api, readableError, type CanonicalDetail } from '../api'
 import { Card, SectionTitle, NmcTag, OrgChip, DemoNote } from '../components/ui'
 
