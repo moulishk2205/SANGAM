@@ -12,3 +12,8 @@ __pycache__/
 .DS_Store
 .env
 node_modules/
+
+# frontend
+web/node_modules/
+web/dist/
+web/.vite/

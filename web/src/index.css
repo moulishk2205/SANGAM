@@ -1,0 +1,213 @@
+@import "tailwindcss";
+
+/* Self-hosted. No CDN, no runtime font fetch — the demo runs with Wi-Fi off. */
+@import "@fontsource-variable/archivo/index.css";
+@import "@fontsource-variable/archivo/wght-italic.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SIH26099 — CONVERGENCE
+   Identity law: the thread is never cut.
+
+   The page holds ONE theme inversion, at the thesis animation: paper before,
+   void after. It is a deliberate narrative device used exactly once, not
+   section-level theme flipping.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* Ground and ink.
+     Ink is off-black on paper; grounds go pure black. The asymmetry is what
+     makes the single inversion feel absolute rather than merely darker. */
+  --color-paper: #f4f2ed;
+  --color-bone: #e8e4db;
+  --color-ink: #14161a;
+  --color-void: #000000;
+  --color-raised: #0b0d10;
+  /* Two dim greys, not one.
+     A single mid-grey cannot clear WCAG AA against both #f4f2ed and #000:
+     darkening it gains contrast on paper and loses it on black. Measured,
+     #6b7076 scored 4.46 on paper and 4.20 on black, failing both. So the dim
+     tone is split by ground, and the hero flips between them on the same tween
+     that flips the ink.
+       --graphite  for dark grounds   6.1:1 on #000
+       --slate     for the paper ground 5.6:1 on #f4f2ed  */
+  --color-graphite: #8a9096;
+  --color-slate: #5c6167;
+  --color-mist: #9aa0a6;
+
+  /* The thread. Two states only, and each means exactly one thing.
+     --live  : this connection carries identity
+     --cut   : this connection failed a critical attribute check */
+  --color-thread: #b9bec4;
+  --color-live: #0e7c6b;
+  --color-cut: #a8321f;
+
+  --font-display: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Duration tiers. Three, deliberately. */
+  --ease-out-quiet: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  --shell: clamp(1.5rem, 5vw, 6rem);
+  --measure: 62ch;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* Lenis owns smooth scrolling; native smooth would fight it. */
+  scroll-behavior: auto;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-void);
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  font-synthesis-weight: none;
+}
+
+/* Numbers must align in columns wherever they are compared. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Line-height curve: tightens as size grows. This ratio, more than the sizes
+   themselves, is what makes large type read as set rather than merely big. */
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: -0.025em;
+  line-height: 0.88;
+  text-wrap: balance;
+}
+.t-headline {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-stretch: 108%;
+  letter-spacing: -0.018em;
+  line-height: 1;
+  text-wrap: balance;
+}
+.t-sub {
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.t-body {
+  font-weight: 400;
+  line-height: 1.55;
+  max-width: var(--measure);
+}
+.t-datum {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.t-label {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Accessibility ─────────────────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--color-live);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--shell);
+  top: -100px;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: top 120ms var(--ease-out-quiet);
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* SplitText line masking. GSAP wraps each line; this clips the overflow so
+   type rises from behind a hard edge instead of merely fading. */
+.line-mask {
+  overflow: hidden;
+  display: block;
+  padding-bottom: 0.08em;
+}
+
+/* Reduced motion.
+   Not a blanket `transition: none`. Motion is removed; every element that
+   GSAP would have animated is forced to its resolved final state so the
+   narrative still reads top to bottom. Section components additionally skip
+   registering their ScrollTriggers. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  [data-reveal],
+  [data-reveal] * {
+    opacity: 1 !important;
+    transform: none !important;
+    visibility: visible !important;
+  }
+}
+
+/* Source-record offsets.
+   Five systems that never spoke to each other do not share a grid, so each
+   record carries its own left origin. Below the mobile breakpoint the offsets
+   collapse: at 375px the scatter is illegible and costs horizontal overflow,
+   so the records stack flush and the misalignment argument is carried by the
+   copy instead. */
+.js-record {
+  margin-left: 0;
+}
+@media (min-width: 768px) {
+  .js-record {
+    margin-left: var(--offset, 0);
+  }
+}
