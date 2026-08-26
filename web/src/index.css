@@ -5,6 +5,7 @@
 @import "@fontsource-variable/archivo/wght-italic.css";
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource-variable/public-sans/index.css";
 
 /* ══════════════════════════════════════════════════════════════════════════
    SIH26099 — CONVERGENCE
@@ -217,4 +218,57 @@ body {
   .js-record {
     margin-left: var(--offset, 0);
   }
+}
+
+/* ── Application surface tokens ───────────────────────────────────────────
+   Tailwind only processes @theme in the file that imports tailwindcss, so
+   the application tokens live here rather than beside the app CSS. */
+@theme {
+  /* Grounds. Warm rather than cold: #F8FAFC and its neighbours read as
+     "generated admin panel", and a warm ground reads as paper. */
+  --color-bg: #f4f2ee;
+  --color-surface: #ffffff;
+  --color-surface-2: #faf9f6;
+  --color-surface-3: #f0ede7;
+  --color-line: #e2ded6;
+  --color-line-strong: #c9c4b9;
+
+  --color-text: #1b1d1f;
+  --color-text-2: #55606a;   /* 6.4:1 on white */
+  /* Measured at 2.9:1 as #87909a and used for nearly every label on the
+     surface, so it failed AA almost everywhere. Darkened until it clears 4.5:1
+     against both the card white and the warm page ground. */
+  --color-text-3: #5f6b76;   /* 5.5:1 on white, 4.9:1 on the page ground */
+
+  /* Brand and semantics share one hue on purpose: teal means "identity
+     carried", which is exactly what a confirmed match is. It is also the
+     colour the thread turns on the landing page when it starts carrying an
+     identity, so the meaning is continuous across the two surfaces. */
+  --color-brand: #0b6e5b;
+  --color-brand-hover: #095546;
+  --color-brand-soft: #e2f0ec;
+  --color-brand-line: #a9d4c9;
+
+  --color-distinct: #b3392a;
+  --color-distinct-soft: #fbeae7;
+  --color-distinct-line: #eec4bc;
+
+  --color-unknown: #8a6a16;
+  --color-unknown-soft: #faf1dc;
+  --color-unknown-line: #e6d3a4;
+
+  /* Canonical identifiers and links. A second hue so an NMC id is instantly
+     findable in a dense table without competing with a verdict. */
+  --color-info: #1f5c99;
+  --color-info-soft: #e9f1f8;
+  --color-info-line: #b9d3ea;
+
+  --font-ui: "Public Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Emil's curves. The built-in CSS easings are too weak to read as
+     deliberate, and ease-in is never used for UI because it delays the first
+     movement, which is the moment the user is watching most closely. */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
 }

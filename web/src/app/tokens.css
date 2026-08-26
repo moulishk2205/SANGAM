@@ -1,0 +1,183 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   MATERIAL INTELLIGENCE — application surface
+
+   The landing page is a story: cinematic, dark, one continuous gesture.
+   This is the tool: bright, dense, workmanlike. Software people use for a
+   whole shift is not lit like a film, and reading a hundred material records
+   on a black ground is tiring in a way reading them on paper is not.
+
+   Type is a readable sans throughout. Mono is reserved for the things that
+   are genuinely machine identifiers — codes, scores, NMC ids. Setting the
+   whole interface in mono was what made the previous attempt read as terminal
+   output rather than as an application.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+
+.app {
+  /* The landing page paints body dark and declares color-scheme: dark. This
+     surface is light, so it overrides both rather than inheriting a dark
+     scrollbar and dark form controls on a white page. */
+  color-scheme: light;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app .mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────
+   A tinted shadow, not a black one. Pure black shadow on a warm ground reads
+   as grey sludge; tinting it toward the ground hue keeps the card feeling
+   like it belongs to the page. */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(58, 52, 40, 0.04);
+}
+
+.card-interactive {
+  transition:
+    box-shadow 200ms var(--ease-out-strong),
+    border-color 200ms var(--ease-out-strong),
+    transform 200ms var(--ease-out-strong);
+  cursor: pointer;
+}
+.card-interactive:hover {
+  border-color: var(--color-line-strong);
+  box-shadow: 0 2px 4px rgba(58, 52, 40, 0.06), 0 8px 20px rgba(58, 52, 40, 0.07);
+  transform: translateY(-2px);
+}
+.card-interactive:active {
+  transform: translateY(-1px) scale(0.995);
+}
+
+/* ── Pointer highlight ────────────────────────────────────────────────────
+   A soft radial follows the cursor across a card. Decorative, so it is the
+   one place a purely aesthetic effect is allowed; it also does real work,
+   telling you which of a dozen dense rows you are actually on. */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 260ms var(--ease-out-strong);
+  background: radial-gradient(
+    420px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(11, 110, 91, 0.07),
+    transparent 62%
+  );
+}
+.spotlight:hover::before {
+  opacity: 1;
+}
+
+/* ── Pressable ───────────────────────────────────────────────────────────
+   Everything pressable scales on :active. Instant physical feedback is the
+   cheapest way to make software feel like it is listening. */
+.press {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms var(--ease-out-strong);
+}
+.press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.press:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Rows ─────────────────────────────────────────────────────────────────
+   Colour only. A transform on a dense list shifts the row under the cursor
+   and makes the whole table feel unstable. */
+.row {
+  transition: background-color 130ms ease;
+}
+.row:hover {
+  background: var(--color-surface-2);
+}
+
+/* ── Focus ─────────────────────────────────────────────────────────────── */
+.app :focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Underline that grows from the left, not a colour flip ─────────────── */
+.link {
+  color: var(--color-info);
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 220ms var(--ease-out-strong);
+}
+.link:hover,
+.link:focus-visible {
+  background-size: 100% 1px;
+}
+
+/* ── Bars ─────────────────────────────────────────────────────────────── */
+.meter {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-surface-3);
+  overflow: hidden;
+}
+.meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 520ms var(--ease-out-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-interactive,
+  .press,
+  .row,
+  .link,
+  .meter > span,
+  .spotlight::before {
+    transition: none !important;
+  }
+  .card-interactive:hover,
+  .card-interactive:active,
+  .press:active:not(:disabled) {
+    transform: none;
+  }
+  .spotlight::before {
+    display: none;
+  }
+}
+
+
+/* Utility used by screen-reader-only labels in this tree. */
+.app .sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

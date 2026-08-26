@@ -13,7 +13,7 @@ import { Disclosure } from './sections/Disclosure'
 import { Foundation } from './sections/Foundation'
 import { Future } from './sections/Future'
 import { Cta } from './sections/Cta'
-import { Platform } from './platform/Platform'
+import { Platform } from './app/Platform'
 
 export default function App() {
   // Two routes, no router. The platform is not built yet, so a dependency for

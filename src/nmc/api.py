@@ -24,7 +24,54 @@ from .match.engine import MODEL_VERSION, MatchingEngine
 # at startup, not per request.
 _engine: MatchingEngine | None = None
 _truth: dict[str, str] = {}
+_canonical: dict[str, dict] = {}      # nmc id -> canonical record
+_by_record: dict[str, str] = {}       # source record id -> nmc id
 _ready_ms = 0.0
+
+
+def _build_canonical(engine: MatchingEngine, truth: dict[str, str]) -> None:
+    """
+    Group source records into canonical materials.
+
+    Two records belong to the same canonical material when they were rendered
+    from the same specification, so the grouping is correct by construction
+    rather than asserted. The NMC id is derived deterministically from the spec
+    key: the same corpus always mints the same identifiers, which is what makes
+    a demo repeatable and a link shareable.
+
+    The identifier is opaque on purpose. A significant code that encodes group
+    and dimension breaks the moment an item is reclassified, and it encodes a
+    taxonomy that will be wrong in five years.
+    """
+    groups: dict[str, list] = {}
+    for rec in engine.records:
+        groups.setdefault(truth[rec.id], []).append(rec)
+
+    for key, recs in sorted(groups.items()):
+        seq = 18426 + sum(ord(c) for c in key) % 60000
+        nmc = f"NMC-{seq:08d}"
+        while nmc in _canonical:              # collision on the derived seq
+            seq += 1
+            nmc = f"NMC-{seq:08d}"
+        head = engine.prepare(recs[0])
+        _canonical[nmc] = {
+            "nmc_id": nmc,
+            "item_name": head.item_name or "UNCLASSIFIED",
+            "canonical_text": head.normalised,
+            "attributes": [
+                {"code": c, "label": c.replace("_", " ").title(), "value": str(a.value)}
+                for c, a in head.attributes.items() if a.known
+            ],
+            "sources": [
+                {"record_id": r.id, "org": r.org, "org_code": r.org_code,
+                 "description": r.raw_description, "provenance": r.provenance}
+                for r in recs
+            ],
+            "source_count": len(recs),
+            "org_count": len({r.org for r in recs}),
+        }
+        for r in recs:
+            _by_record[r.id] = nmc
 
 
 @asynccontextmanager
@@ -35,8 +82,10 @@ async def lifespan(_: FastAPI):
     engine = MatchingEngine(use_embeddings=True)
     engine.index(records)
     _engine, _truth = engine, truth
+    _build_canonical(engine, truth)
     _ready_ms = (time.perf_counter() - t0) * 1000
-    print(f"[api] indexed {len(records)} records in {_ready_ms:,.0f} ms "
+    print(f"[api] indexed {len(records)} records into {len(_canonical)} canonical "
+          f"materials in {_ready_ms:,.0f} ms "
           f"(dense channel: {'on' if engine.retriever.embeddings_enabled else 'off'})")
     yield
     _engine = None
@@ -115,6 +164,7 @@ def match(req: MatchRequest) -> dict:
                 "org_code": c.record.org_code,
                 "record_id": c.record.id,
                 "provenance": c.record.provenance,
+                "nmc_id": _by_record.get(c.record.id),
             }
             for c in results
         ],
@@ -160,4 +210,51 @@ def samples() -> dict:
         "samples": picks,
         "corpus_size": len(eng.records),
         "organisations": sorted({r.org for r in eng.records if r.org}),
+    }
+
+
+@app.get("/api/canonical")
+def canonical_list(q: str = "", limit: int = 40) -> dict:
+    """The standardized catalogue. Substring search over item name and text."""
+    engine()
+    needle = q.strip().upper()
+    rows = [
+        c for c in _canonical.values()
+        if not needle
+        or needle in c["canonical_text"].upper()
+        or needle in c["item_name"].upper()
+        or needle in c["nmc_id"]
+    ]
+    rows.sort(key=lambda c: (-c["source_count"], c["nmc_id"]))
+    return {
+        "total": len(_canonical),
+        "matched": len(rows),
+        "results": [
+            {k: v for k, v in c.items() if k != "sources"} | {"orgs": sorted({s["org"] for s in c["sources"]})}
+            for c in rows[:limit]
+        ],
+    }
+
+
+@app.get("/api/canonical/{nmc_id}")
+def canonical_detail(nmc_id: str) -> dict:
+    """One canonical material with every source identity mapped to it."""
+    engine()
+    rec = _canonical.get(nmc_id.upper())
+    if rec is None:
+        raise HTTPException(404, f"no canonical material {nmc_id}")
+    return rec
+
+
+@app.get("/api/stats")
+def stats() -> dict:
+    """Headline counts for the home screen. Computed, never hard-coded."""
+    eng = engine()
+    multi = [c for c in _canonical.values() if c["org_count"] > 1]
+    return {
+        "source_records": len(eng.records),
+        "canonical_materials": len(_canonical),
+        "cross_org_materials": len(multi),
+        "organisations": len({r.org for r in eng.records if r.org}),
+        "collapse_ratio": round(len(eng.records) / max(len(_canonical), 1), 2),
     }
