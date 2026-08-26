@@ -1,0 +1,14 @@
+# data is never committed — provenance is tracked in docs/DATA_PROVENANCE.md
+data/
+*.zip
+*.csv
+*.xlsx
+*.parquet
+models/
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.DS_Store
+.env
+node_modules/

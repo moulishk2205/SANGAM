@@ -1,0 +1,25 @@
+# --- core data ---
+polars>=1.0
+pyarrow>=16
+python-calamine>=0.2        # fast, correct xlsx reading (not openpyxl)
+
+# --- units: the numeric veto depends on this being right ---
+pint>=0.24
+
+# --- ML (added in Phase 2; pinned loosely for now) ---
+# sentence-transformers>=3.0
+# torch>=2.3
+# onnxruntime>=1.18
+# lightgbm>=4.3
+# scikit-learn>=1.5
+
+# --- backend (Phase 3) ---
+# fastapi>=0.115
+# sqlalchemy>=2.0
+# alembic>=1.13
+# pydantic>=2.8
+# psycopg[binary]>=3.2
+
+# --- dev ---
+pytest>=8.0
+ruff>=0.6

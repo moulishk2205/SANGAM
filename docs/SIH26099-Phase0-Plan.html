@@ -1,0 +1,1646 @@
+<title>SIH26099 Phase 0</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+
+<style>
+:root{
+  --ground:#F4F6F7; --surface:#FFFFFF; --surface-2:#EDF0F2; --surface-3:#E3E8EB;
+  --line:#D5DCE1; --line-strong:#B9C4CB;
+  --ink:#0E1519; --body:#2E3A43; --muted:#5D6D78; --faint:#8496A1;
+  --accent:#0B5F7D; --accent-soft:#E2EEF3; --accent-line:#9CC4D4;
+  --oxide:#9C4A16; --oxide-soft:#F6EAE1;
+  --ok:#1B6B45; --ok-soft:#E2F0E9;
+  --warn:#8A6100; --warn-soft:#F6EEDC;
+  --stop:#A32218; --stop-soft:#F8E5E3;
+  --shadow:0 1px 2px rgba(14,21,25,.06),0 4px 14px rgba(14,21,25,.05);
+  --radius:3px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0C1114; --surface:#141B20; --surface-2:#1A232A; --surface-3:#212D35;
+    --line:#2A363E; --line-strong:#3C4B55;
+    --ink:#EDF2F4; --body:#C3CFD6; --muted:#8DA0AC; --faint:#6B7E8A;
+    --accent:#5FB6D6; --accent-soft:#14303C; --accent-line:#2C5F75;
+    --oxide:#D98A55; --oxide-soft:#33200F;
+    --ok:#5CBE8E; --ok-soft:#12301F;
+    --warn:#D6A93F; --warn-soft:#2E2510;
+    --stop:#E8776C; --stop-soft:#34181A;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0C1114; --surface:#141B20; --surface-2:#1A232A; --surface-3:#212D35;
+  --line:#2A363E; --line-strong:#3C4B55;
+  --ink:#EDF2F4; --body:#C3CFD6; --muted:#8DA0AC; --faint:#6B7E8A;
+  --accent:#5FB6D6; --accent-soft:#14303C; --accent-line:#2C5F75;
+  --oxide:#D98A55; --oxide-soft:#33200F;
+  --ok:#5CBE8E; --ok-soft:#12301F;
+  --warn:#D6A93F; --warn-soft:#2E2510;
+  --stop:#E8776C; --stop-soft:#34181A;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--body);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15.5px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:Archivo,"IBM Plex Sans",sans-serif;color:var(--ink);text-wrap:balance;margin:0;line-height:1.18}
+p{margin:0}
+a{color:var(--accent);text-underline-offset:2px}
+code,kbd{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.87em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- shell ---------- */
+.shell{max-width:1500px;margin:0 auto;padding:0 20px;display:grid;grid-template-columns:250px minmax(0,1fr);gap:52px;align-items:start}
+@media (max-width:1080px){.shell{grid-template-columns:1fr;gap:0}}
+
+/* ---------- masthead ---------- */
+.mast{border-bottom:1px solid var(--line);background:var(--surface);}
+.mast-in{max-width:1500px;margin:0 auto;padding:38px 20px 30px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.mast h1{font-size:clamp(29px,4.4vw,46px);font-weight:700;letter-spacing:-.02em;margin:12px 0 0}
+.mast .sub{margin-top:12px;max-width:74ch;font-size:17px;color:var(--muted)}
+.metarow{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.04em;padding:4px 9px;border:1px solid var(--line-strong);border-radius:2px;color:var(--muted);background:var(--surface-2)}
+.chip.hot{border-color:var(--oxide);color:var(--oxide);background:var(--oxide-soft)}
+.chip.gate{border-color:var(--accent-line);color:var(--accent);background:var(--accent-soft)}
+
+/* ---------- toc ---------- */
+nav.toc{position:sticky;top:14px;max-height:calc(100vh - 28px);overflow-y:auto;padding:26px 0 40px;font-size:13.5px}
+@media (max-width:1080px){nav.toc{position:static;max-height:none;border-bottom:1px solid var(--line);margin-bottom:8px}}
+nav.toc .tlabel{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:20px 0 8px}
+nav.toc .tlabel:first-child{margin-top:0}
+nav.toc a{display:flex;gap:9px;padding:3.5px 0;color:var(--muted);text-decoration:none;line-height:1.35}
+nav.toc a:hover{color:var(--accent)}
+nav.toc a .k{font-family:"IBM Plex Mono",monospace;color:var(--faint);flex:0 0 15px;font-size:11.5px;padding-top:1px}
+
+/* ---------- sections ---------- */
+main{padding:34px 0 100px;min-width:0}
+section{margin-bottom:52px;scroll-margin-top:16px}
+.shead{display:flex;gap:14px;align-items:baseline;border-bottom:2px solid var(--ink);padding-bottom:9px;margin-bottom:20px}
+.shead .mark{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:14px;color:var(--accent);flex:0 0 auto;letter-spacing:.03em}
+.shead h2{font-size:24px;font-weight:700;letter-spacing:-.015em}
+h3{font-size:17.5px;font-weight:600;margin:30px 0 10px;letter-spacing:-.005em}
+h4{font-size:14px;font-weight:600;margin:22px 0 7px;font-family:"IBM Plex Sans",sans-serif;color:var(--ink)}
+main p{margin:0 0 13px;max-width:76ch}
+main ul,main ol{margin:0 0 14px;padding-left:20px;max-width:76ch}
+main li{margin-bottom:6px}
+strong{color:var(--ink);font-weight:600}
+.lead{font-size:16.5px;color:var(--muted);max-width:74ch;margin-bottom:18px}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;margin:0 0 18px;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius)}
+table{border-collapse:collapse;width:100%;font-size:13.8px;min-width:520px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{background:var(--surface-2);font-family:Archivo,sans-serif;font-weight:600;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);white-space:nowrap;border-bottom:1px solid var(--line-strong)}
+tbody tr:last-child td{border-bottom:0}
+td code{background:var(--surface-2);padding:1px 4px;border-radius:2px}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+td.tight,th.tight{white-space:nowrap}
+
+/* ---------- callouts ---------- */
+.call{border-left:3px solid var(--accent);background:var(--surface);padding:14px 16px;margin:0 0 18px;border-radius:0 var(--radius) var(--radius) 0;box-shadow:var(--shadow)}
+.call .ct{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;font-weight:600}
+.call p{margin:0 0 9px}.call p:last-child{margin:0}
+.call.stop{border-left-color:var(--stop)}.call.stop .ct{color:var(--stop)}
+.call.warn{border-left-color:var(--warn)}.call.warn .ct{color:var(--warn)}
+.call.ok{border-left-color:var(--ok)}.call.ok .ct{color:var(--ok)}
+.call.oxide{border-left-color:var(--oxide)}.call.oxide .ct{color:var(--oxide)}
+
+/* ---------- badges ---------- */
+.b{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.05em;padding:1.5px 6px;border-radius:2px;white-space:nowrap;font-weight:500;vertical-align:baseline}
+.b-v{background:var(--ok-soft);color:var(--ok);border:1px solid var(--ok)}
+.b-j{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-line)}
+.b-u{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
+.b-x{background:var(--stop-soft);color:var(--stop);border:1px solid var(--stop)}
+.b-m{background:var(--surface-2);color:var(--muted);border:1px solid var(--line-strong)}
+
+/* ---------- pipeline diagram ---------- */
+.pipe{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:18px;margin:0 0 18px;overflow-x:auto}
+.stage{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;padding:9px 0;border-bottom:1px dashed var(--line);min-width:440px}
+.stage:last-child{border-bottom:0}
+.stage .sn{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--surface);background:var(--accent);border-radius:2px;text-align:center;padding:3px 0;letter-spacing:.02em}
+.stage .sn.det{background:var(--muted)}
+.stage .sn.ml{background:var(--oxide)}
+.stage .sn.veto{background:var(--stop)}
+.stage .st{font-family:Archivo,sans-serif;font-weight:600;font-size:13.5px;color:var(--ink)}
+.stage .sd{font-size:13px;color:var(--muted);margin-top:2px}
+.stage .sd code{color:var(--body)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:baseline}
+
+/* ---------- code ---------- */
+pre{background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--line-strong);padding:13px 15px;overflow-x:auto;font-family:"IBM Plex Mono",monospace;font-size:12.6px;line-height:1.55;margin:0 0 18px;border-radius:0 var(--radius) var(--radius) 0;color:var(--body)}
+pre b{color:var(--ink);font-weight:600}
+pre .c{color:var(--faint)}
+pre .hl{color:var(--oxide);font-weight:500}
+
+/* ---------- trace ---------- */
+.trace{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin:0 0 18px;background:var(--surface)}
+.trace-h{background:var(--surface-2);padding:9px 14px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+.trace-b{padding:0}
+.trow{display:grid;grid-template-columns:150px 1fr 1fr 78px;gap:0;border-bottom:1px solid var(--line);font-size:13.2px}
+.trow:last-child{border-bottom:0}
+.trow>div{padding:7px 12px;border-right:1px solid var(--line)}
+.trow>div:last-child{border-right:0;text-align:center}
+.trow.hdr{background:var(--surface-2);font-family:Archivo,sans-serif;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.trow .attr{font-weight:600;color:var(--ink)}
+.trow .val{font-family:"IBM Plex Mono",monospace;font-size:12.4px}
+.v-ok{color:var(--ok);font-weight:600}
+.v-no{color:var(--stop);font-weight:600}
+.v-un{color:var(--warn);font-weight:600}
+.trace-f{background:var(--surface-2);padding:10px 14px;border-top:1px solid var(--line-strong);font-size:13.4px}
+@media (max-width:640px){.trow{grid-template-columns:1fr 1fr 60px}.trow .attr{grid-column:1/-1;border-right:0}}
+
+/* ---------- moscow ---------- */
+.mos{display:grid;gap:2px;margin-bottom:18px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--line)}
+.mos-g{background:var(--surface);padding:13px 15px}
+.mos-g h4{margin:0 0 8px;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.mos-g.must h4{color:var(--ok)} .mos-g.should h4{color:var(--accent)}
+.mos-g.nice h4{color:var(--warn)} .mos-g.never h4{color:var(--stop)}
+.mos-g ul{margin:0;padding-left:17px;font-size:13.4px;columns:2;column-gap:26px}
+.mos-g li{margin-bottom:4px;break-inside:avoid}
+@media (max-width:720px){.mos-g ul{columns:1}}
+
+/* ---------- kpi ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin:0 0 20px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:13px 14px;box-shadow:var(--shadow)}
+.kpi .kl{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.kpi .kv{font-family:Archivo,sans-serif;font-size:25px;font-weight:700;color:var(--ink);margin-top:4px;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .kn{font-size:12.3px;color:var(--muted);margin-top:3px}
+.kpi.alert .kv{color:var(--oxide)}
+
+/* ---------- q block ---------- */
+.q{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin-bottom:10px;overflow:hidden}
+.q-q{padding:11px 14px;font-weight:600;color:var(--ink);background:var(--surface-2);font-size:14.2px;border-bottom:1px solid var(--line)}
+.q-a{padding:11px 14px;font-size:14px}
+.q-a p{margin:0 0 9px}.q-a p:last-child{margin:0}
+
+hr.rule{border:0;border-top:1px solid var(--line);margin:30px 0}
+.foot{border-top:2px solid var(--ink);padding:22px 0 0;margin-top:14px;font-size:13.2px;color:var(--muted)}
+
+/* ================= PRINT / PDF ================= */
+@media print{
+  /* force the light palette — dark grounds are wrong on paper */
+  :root,:root[data-theme="dark"],:root:not([data-theme="light"]){
+    --ground:#FFFFFF; --surface:#FFFFFF; --surface-2:#F1F4F6; --surface-3:#E6EBEE;
+    --line:#C9D2D8; --line-strong:#A7B4BD;
+    --ink:#0E1519; --body:#222C34; --muted:#4E5D68; --faint:#78888F;
+    --accent:#0A4F69; --accent-soft:#E8F1F5; --accent-line:#8FB8CA;
+    --oxide:#8A3F11; --oxide-soft:#F7EDE6;
+    --ok:#14573A; --ok-soft:#E6F1EB;
+    --warn:#6F4E00; --warn-soft:#F7F0DE;
+    --stop:#8C1C13; --stop-soft:#F9E8E6;
+    --shadow:none;
+  }
+  *{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important}
+
+  @page{size:A4; margin:14mm 13mm 16mm}
+  html,body{background:#fff !important; font-size:9.6pt; line-height:1.5}
+
+  /* single column; TOC becomes a real contents page */
+  .shell{display:block; max-width:none; padding:0; gap:0}
+  nav.toc{position:static; max-height:none; overflow:visible;
+          break-after:page; padding:0 0 6pt; font-size:9.4pt;
+          columns:2; column-gap:14mm}
+  nav.toc a{color:#0E1519; break-inside:avoid}
+  nav.toc .tlabel{break-after:avoid}
+  main{padding:0}
+
+  .mast{border-bottom:2px solid var(--ink); break-after:avoid}
+  .mast-in{padding:0 0 10pt; max-width:none}
+  .mast h1{font-size:20pt}
+  .mast .sub{font-size:10.5pt; max-width:none}
+
+  /* one deliverable per page keeps the reference usable */
+  section{break-before:page; margin-bottom:0; padding-bottom:4pt}
+  #tldr{break-before:avoid}
+  .shead{break-after:avoid}
+  h3,h4{break-after:avoid; margin-top:13pt}
+  main p,main li{max-width:none; orphans:3; widows:3}
+  .lead{font-size:10.4pt}
+
+  /* nothing may be cut in half */
+  .call,.kpi,.q,.trace,.pipe,.mos-g,.stage,.trow,tr,pre{break-inside:avoid}
+  table{break-inside:auto}
+  thead{display:table-header-group}
+  tfoot{display:table-footer-group}
+
+  .tw{overflow:visible; box-shadow:none}
+  table{min-width:0; font-size:8.9pt; width:100%}
+  th,td{padding:4pt 6pt}
+  thead th{font-size:7.6pt}
+
+  pre{font-size:8.1pt; line-height:1.42; white-space:pre-wrap; word-break:break-word;
+      background:var(--surface-2); break-inside:avoid; padding:7pt 9pt}
+  .pipe{padding:9pt; overflow:visible}
+  .stage{min-width:0; padding:5pt 0}
+  .stage .sd{font-size:8.9pt}
+  .trow{font-size:8.9pt}
+  .trace-f{font-size:9pt}
+  .mos-g ul{columns:2; font-size:8.9pt}
+  .kpis{grid-template-columns:repeat(4,1fr); gap:6pt}
+  .kpi .kv{font-size:15pt}
+  .kpi .kn{font-size:8.4pt}
+  .q-q{font-size:9.8pt}
+  .q-a{font-size:9.4pt}
+  .b{font-size:7.4pt}
+  .chip{font-size:8pt}
+  a{color:var(--accent); text-decoration:none}
+  .foot{break-inside:avoid}
+}
+</style>
+
+<header class="mast">
+  <div class="mast-in">
+    <div class="eyebrow">Phase 0 — Planning · Approval Gate · No Implementation</div>
+    <h1>SIH26099 — AI Standardization &amp; Harmonization of Material Codes Across CPSEs</h1>
+    <p class="sub">Complete architecture, AI/ML strategy, dataset plan, scope decisions and risk register — plus an explicit list of the places where the original brief is wrong and needs correcting before a line of code is written.</p>
+    <div class="metarow">
+      <span class="chip gate">STATUS · AWAITING YOUR APPROVAL</span>
+      <span class="chip">MoP&amp;NG / CPCL</span>
+      <span class="chip">Compiled 26 Aug 2026</span>
+      <span class="chip hot">Idea deadline 20 Sep 2026 — 25 days</span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+<nav class="toc">
+  <div class="tlabel">Start here</div>
+  <a href="#tldr"><span class="k">§</span><span>Executive summary</span></a>
+  <a href="#corrections"><span class="k">§</span><span>10 corrections to the brief</span></a>
+  <div class="tlabel">Deliverables</div>
+  <a href="#a"><span class="k">A</span><span>Problem understanding</span></a>
+  <a href="#b"><span class="k">B</span><span>Assumption audit</span></a>
+  <a href="#c"><span class="k">C</span><span>Solution architecture</span></a>
+  <a href="#d"><span class="k">D</span><span>AI matching engine</span></a>
+  <a href="#e"><span class="k">E</span><span>Dataset &amp; training</span></a>
+  <a href="#f"><span class="k">F</span><span>Model strategy</span></a>
+  <a href="#g"><span class="k">G</span><span>Data architecture</span></a>
+  <a href="#h"><span class="k">H</span><span>Platform &amp; screens</span></a>
+  <a href="#i"><span class="k">I</span><span>UX flows</span></a>
+  <a href="#j"><span class="k">J</span><span>ERP integration</span></a>
+  <a href="#k"><span class="k">K</span><span>Security &amp; audit</span></a>
+  <a href="#l"><span class="k">L</span><span>Evaluation strategy</span></a>
+  <a href="#m"><span class="k">M</span><span>Demo strategy</span></a>
+  <a href="#n"><span class="k">N</span><span>Innovation</span></a>
+  <a href="#o"><span class="k">O</span><span>Risk register</span></a>
+  <a href="#p"><span class="k">P</span><span>What NOT to build</span></a>
+  <div class="tlabel">Approval doc</div>
+  <a href="#stack"><span class="k">1</span><span>Final tech stack</span></a>
+  <a href="#phases"><span class="k">2</span><span>Development phases</span></a>
+  <a href="#effort"><span class="k">3</span><span>Effort estimate</span></a>
+  <a href="#deps"><span class="k">4</span><span>Dependencies</span></a>
+  <a href="#verify"><span class="k">5</span><span>Verification checklist</span></a>
+  <a href="#decide"><span class="k">6</span><span>Decisions we need</span></a>
+</nav>
+
+<main>
+
+<!-- ============ EXEC ============ -->
+<section id="tldr">
+  <div class="shead"><span class="mark">§</span><h2>Executive summary</h2></div>
+
+  <p class="lead">Your instinct — that this is not "an AI duplicate detector" but a material-identity platform — is right. Three things in the brief are wrong enough to sink the project if they survive into Phase 1, and one piece of luck makes the hardest part far easier than you assumed.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="kl">Problem owner</div><div class="kv">CPCL</div><div class="kn">Refinery, under MoP&amp;NG. Judges will know MRO.</div></div>
+    <div class="kpi alert"><div class="kl">PS dataset</div><div class="kv">None</div><div class="kn">"To be provided by participating CPSEs"</div></div>
+    <div class="kpi"><div class="kl">Real labelled pairs available</div><div class="kv">50k–150k</div><div class="kn">From DLA FLIS, free, no invention needed</div></div>
+    <div class="kpi alert"><div class="kl">Brief vs problem statement</div><div class="kv">≈3×</div><div class="kn">Scope overshoot. Must cut.</div></div>
+  </div>
+
+  <h3>The four findings that change the plan</h3>
+
+  <div class="call ok">
+    <div class="ct">1 · The data problem is solved, and better than you hoped</div>
+    <p>The US Defense Logistics Agency publishes the complete <strong>FLIS / PUB LOG</strong> catalogue as free monthly CSVs, no login. It contains ~80,000 approved item names with definitions, a 27,552-row attribute dictionary, controlled vocabularies, and — decisively — <strong>two real ground-truth relations for exactly your problem</strong>: many manufacturer part numbers mapping to one canonical item (<code>V_FLIS_PART</code>), and human standardization decisions recording that item X replaces item Y (<code>V_FLIS_STANDARDIZATION</code>).</p>
+    <p><strong>You do not have to invent your labels.</strong> You can report precision and recall against decisions made by a real national codification authority. Everything synthetic is then only the <em>surface text</em> — the messy way five CPSEs would each write down the same real item.</p>
+  </div>
+
+  <div class="call stop">
+    <div class="ct">2 · Your §5 data assumptions are factually wrong</div>
+    <p>"Public government procurement datasets, public CPSE material catalogs, GeM data where legally usable" — none of these yield item-level material data that is both accessible and legal. <span class="b b-v">VERIFIED</span> <code>data.gov.in</code> has zero item-level material records. GeM's own website policy forbids reproduction of its content. The CPPP tender portal is CAPTCHA-gated. Commercial catalogues (McMaster, Fastenal, IndiaMART) block crawlers in <code>robots.txt</code>.</p>
+    <p>Correct this before the presentation. A judge from a CPSE will know it is wrong, and "we scraped GeM" in front of a Government of India panel ends your slot.</p>
+  </div>
+
+  <div class="call stop">
+    <div class="ct">3 · Semantic similarity must never decide identity</div>
+    <p>You identified this correctly but drew the wrong architectural conclusion. Your pipeline treats "Hybrid Scoring" as a <em>blend</em> of a similarity number and an attribute number. It must instead be: <strong>retrieval by text, decision by attribute logic, with a mismatch on a discriminating attribute acting as a hard veto — not a score penalty.</strong></p>
+    <p>This is backed by a verified admission from the authors of DITTO, the leading deep entity-matching system: <em>"the LMs that we have tested in Ditto are pre-trained on general English text corpora and thus might not capture well EM tasks with a lot of numeric data."</em> Put that quote on a slide. <code>M10×50</code> vs <code>M10×75</code> must be <em>structurally impossible</em> to call a duplicate, not merely unlikely.</p>
+  </div>
+
+  <div class="call oxide">
+    <div class="ct">4 · The brief is missing the strongest identity signal in the domain</div>
+    <p>There is no <strong>manufacturer part number</strong>, no <strong>drawing number</strong>, and no <strong>revision</strong> anywhere in your 36 sections. In real MRO masters these beat the description outright. The NATO Codification System formalises this as the <em>reference method</em> of identification, and real Indian CPSE data confirms it — a live BHEL Haridwar tender contains rows like <code>DRG: 0105255634 1 REV: 04 PISTON RING MATERIAL: COCR20W15NI</code>.</p>
+    <p>Add both matchers and fuse them. A normalised-MPN match across two CPSEs is near-proof of identity, and it produces a spectacular demo moment: it catches duplicates whose <em>descriptions share almost no words</em>.</p>
+  </div>
+
+  <h3>What we recommend you build</h3>
+  <p>A <strong>codification bureau</strong>, not a deduplication tool. Copy the NCS model explicitly: an approved item-name dictionary, per-name attribute templates, stable attribute codes, a non-significant national identifier, and dual reference/descriptive identification. India already runs a NATO-compliant codification bureau for defence materiel through NCB (India); there is no civil-CPSE equivalent. That gap is real, checkable, and it is your pitch.</p>
+</section>
+
+<!-- ============ CORRECTIONS ============ -->
+<section id="corrections">
+  <div class="shead"><span class="mark">✗</span><h2>Ten corrections to the brief</h2></div>
+  <p class="lead">You asked to be challenged rather than agreed with. These are ordered by how much damage they do if left uncorrected.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th class="tight">#</th><th>What the brief says</th><th>What is actually true</th><th class="tight">Cost if ignored</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Training data obtainable from GeM, data.gov.in, public CPSE catalogues</td><td>None of these are accessible <em>and</em> legal. FLIS/PUB LOG is, and is far better. <span class="b b-v">VERIFIED</span></td><td>Fatal — no data</td></tr>
+      <tr><td class="num">2</td><td>Hybrid scoring blends semantic + attribute similarity</td><td>Attribute mismatch must <strong>veto</strong>, not penalise. Similarity is for recall only.</td><td>Fatal — false merges</td></tr>
+      <tr><td class="num">3</td><td>Identity comes from the description</td><td>MPN, drawing number and revision are stronger. Absent from the brief entirely.</td><td>Severe — misses real duplicates</td></tr>
+      <tr><td class="num">4</td><td>Abbreviation chaos is a discipline problem</td><td>It is caused by <code>SAP MAKT-MAKTX</code> being <strong>CHAR 40 and unlengthenable</strong>. Duplicates are a <em>search failure</em>, not a discipline failure.</td><td>Severe — wrong framing</td></tr>
+      <tr><td class="num">5</td><td>FUNCTIONALLY EQUIVALENT is an AI output class</td><td>In refining this has statutory and safety consequences (ASME B16.5, NACE MR0175, ATEX/IECEx). An AI asserting it is a liability.</td><td>Severe — loses Q&amp;A</td></tr>
+      <tr><td class="num">6</td><td>"Preserve original CPSE codes" (§9, one line)</td><td>It is <em>the</em> central political requirement and must shape the data model: federated identity, versioned mapping, and a working <strong>unmap</strong> path.</td><td>High — first question asked</td></tr>
+      <tr><td class="num">7</td><td>Unit normalisation = unit conversion</td><td>The real problem is pack-size and issue-unit semantics: <code>EA</code>/<code>NO</code>/<code>PC</code>/<code>NOS</code> vs <code>SET</code>/<code>BOX-100</code>/<code>PR</code>.</td><td>High — misses a duplicate class</td></tr>
+      <tr><td class="num">8</td><td>~35 sections of scope</td><td>The problem statement lists 11 capabilities, 6 of which are governance, not AI. Brief scope ≈ 3× the ask.</td><td>High — nothing finished</td></tr>
+      <tr><td class="num">9</td><td>Bolts as the running example</td><td>Fasteners are the <em>easiest possible case</em>. A CPCL panel will ask about valves, motors and instruments.</td><td>Medium — looks naive</td></tr>
+      <tr><td class="num">10</td><td>Live-upload three CPSE datasets on stage</td><td>Arithmetic says minutes to hours. Pre-ingest the baseline; live-upload a small delta.</td><td>Medium — demo stalls</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call warn">
+    <div class="ct">Things you were right about, and should not be talked out of</div>
+    <p>Human-in-the-loop governance; preserving original codes; explainability as attribute tables rather than a percentage; refusing to invent cost-savings figures; asking whether blockchain is actually useful; insisting on real ML rather than an LLM wrapper; demanding baselines. All correct, all kept.</p>
+  </div>
+</section>
+
+<!-- ============ A ============ -->
+<section id="a">
+  <div class="shead"><span class="mark">A</span><h2>Problem understanding</h2></div>
+
+  <h3>The official problem statement</h3>
+  <p>Retrieved from two independent mirrors of <code>sih.gov.in/sih2026PS</code> which agree verbatim. <span class="b b-u">Byte-verify on the official site before idea submission.</span></p>
+
+  <div class="tw"><table>
+    <tbody>
+      <tr><th class="tight">PS number</th><td>SIH26099</td></tr>
+      <tr><th class="tight">Title</th><td>AI-Driven Standardization and Harmonization of Material Codes Across CPSEs</td></tr>
+      <tr><th class="tight">Organisation</th><td>Ministry of Petroleum &amp; Natural Gas</td></tr>
+      <tr><th class="tight">Department</th><td><strong>Chennai Petroleum Corporation Limited (CPCL)</strong> — a refinery in the IOCL group</td></tr>
+      <tr><th class="tight">Theme</th><td>Smart Automation · Software</td></tr>
+      <tr><th class="tight">Idea deadline</th><td><strong>20 September 2026</strong></td></tr>
+      <tr><th class="tight">Dataset</th><td>"CPSE Material Master Data — <em>to be provided by participating CPSEs</em>" — i.e. no file exists</td></tr>
+      <tr><th class="tight">Tagline</th><td>"One Nation – One Material Code", <em>while maintaining traceability to individual CPSE material codes</em></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The eleven capabilities asked for — and how they weight</h3>
+  <p>This is the single most important strategic observation in the document. <strong>Six of the eleven are identity, workflow, governance and integration. Only five are AI.</strong> A team that builds a beautiful matcher and a thin workflow loses to a team that builds a good matcher and a credible codification-plus-governance story, because the stated deliverable is a <em>material master framework</em>, not a duplicate detector.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th class="tight">#</th><th>Capability</th><th class="tight">Nature</th><th class="tight">Our coverage</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>AI matching of descriptions and specifications across CPSEs</td><td><span class="b b-j">AI</span></td><td>Deliverable D</td></tr>
+      <tr><td class="num">2</td><td>Identify duplicate, near-duplicate and equivalent materials</td><td><span class="b b-j">AI</span></td><td>D — equivalence downgraded</td></tr>
+      <tr><td class="num">3</td><td>Automated standardization of descriptions and attributes</td><td><span class="b b-j">AI</span></td><td>D — canonicaliser</td></tr>
+      <tr><td class="num">4</td><td>Intelligent classification and categorization</td><td><span class="b b-j">AI</span></td><td>D — INC assignment</td></tr>
+      <tr><td class="num">5</td><td>Generate / recommend a Common National Material Code</td><td><span class="b b-m">GOV</span></td><td>G — NMC scheme</td></tr>
+      <tr><td class="num">6</td><td>Map existing CPSE codes to the national code</td><td><span class="b b-m">GOV</span></td><td>G — federated mapping</td></tr>
+      <tr><td class="num">7</td><td>Legacy code rationalization and migration support</td><td><span class="b b-m">GOV</span></td><td>G — <code>BISMT</code>, merge/split</td></tr>
+      <tr><td class="num">8</td><td>User validation and approval workflow</td><td><span class="b b-m">GOV</span></td><td>H, I — review cockpit</td></tr>
+      <tr><td class="num">9</td><td>Dashboard for analytics and duplicate detection</td><td><span class="b b-m">UI</span></td><td>H</td></tr>
+      <tr><td class="num">10</td><td>Audit trail and governance mechanism</td><td><span class="b b-m">GOV</span></td><td>K — hash-chained log</td></tr>
+      <tr><td class="num">11</td><td>Integration capability with SAP/ERP</td><td><span class="b b-m">INT</span></td><td>J — contract + mock</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Why duplicates actually arise</h3>
+  <p>Worth stating in your deck, because it motivates the prevention feature and shows you understand the cause rather than the symptom.</p>
+  <ol>
+    <li><strong>The 40-character ceiling.</strong> <code>MAKT-MAKTX</code> is <code>CHAR 40</code> on domain <code>TEXT40</code> and SAP does not support lengthening it. Every abbreviation catastrophe in your brief exists because a storekeeper had 40 characters and a full specification to express. Different sites abbreviate differently, drop different words, and reorder differently.</li>
+    <li><strong>Search that cannot find what exists.</strong> SAP's standard material search is a <code>LIKE</code> on that 40-char string. If you cannot find <code>BLT HEX</code> by typing <code>BOLT</code>, you create a new code. <strong>Duplicate creation is a search failure.</strong></li>
+    <li><strong>Decentralised creation</strong> — each plant has code-creation rights, under procurement time pressure.</li>
+    <li><strong>Legacy migration</strong> — multiple systems merged into one SAP client. <code>MARA-BISMT</code> (old material number) is the fossil record.</li>
+    <li><strong>Vendor-driven descriptions</strong> — copied verbatim from whichever vendor quoted first.</li>
+    <li><strong>Unit-of-measure ambiguity</strong> — stocked as <code>EA</code> at one plant, <code>BOX-100</code> at another.</li>
+  </ol>
+
+  <h3>The strategic frame</h3>
+  <div class="call">
+    <div class="ct">The pitch, in one paragraph, every claim checkable</div>
+    <p>India already operates a NATO-compliant codification bureau for defence materiel — NCB (India), under the Directorate of Standardisation, DDP, a member of AC/135 since 2008. There is <strong>no civil-CPSE equivalent</strong>. SIH26099 is asking for one. We are building the reference architecture, borrowing the NATO Codification System's proven separation of <em>identity</em>, <em>classification</em> and <em>characteristics</em>, with per-CPSE sovereignty over existing codes preserved permanently.</p>
+  </div>
+</section>
+
+<!-- ============ B ============ -->
+<section id="b">
+  <div class="shead"><span class="mark">B</span><h2>Assumption audit</h2></div>
+  <p class="lead">Everything in the brief that rests on an unchecked belief, with the correction and how to verify it yourself.</p>
+
+  <h3>Domain assumptions</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Assumption</th><th>Status</th><th>Correction / action</th></tr></thead>
+    <tbody>
+      <tr><td>The material master is essentially "code + description"</td><td><span class="b b-x">WRONG</span></td><td>Model <code>MATNR, MTART, MATKL, MEINS, BISMT, NORMT, GROES, WRKST, ZEINR</code>. <code>WRKST</code> (basic material) and <code>ZEINR</code> (drawing) are load-bearing.</td></tr>
+      <tr><td>Descriptions are clean spec strings</td><td><span class="b b-x">WRONG</span></td><td>Real CPSE rows are multi-line blobs with embedded <code>DRG:</code>, <code>REV:</code>, <code>MATERIAL:</code> fields. Design for blobs.</td></tr>
+      <tr><td>Fasteners represent the domain</td><td><span class="b b-x">WRONG</span></td><td>Demo ≥6 families of graded difficulty. See §M.</td></tr>
+      <tr><td>Material descriptions may be multilingual</td><td><span class="b b-u">UNVERIFIED</span></td><td>Strong prior: Indian CPSE masters are English, often mangled. <strong>Ask a domain contact before spending a week on it.</strong> Handle abbreviations and transliteration noise, not translation.</td></tr>
+      <tr><td>Supplier data will be available for the graph</td><td><span class="b b-x">WRONG</span></td><td>You have no supplier data and no legal route to it. Cut the supplier graph.</td></tr>
+      <tr><td>ONGC/IOCL/CPCL use MESC-derived codes</td><td><span class="b b-u">UNVERIFIED</span></td><td>Check ONGC's Integrated Materials Management Manual, or inspect codes in public tenders. Do not claim it.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>ML assumptions</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Assumption</th><th>Status</th><th>Correction / action</th></tr></thead>
+    <tbody>
+      <tr><td>A fine-tuned embedding model is the core of the system</td><td><span class="b b-x">WRONG</span></td><td>Extraction and normalisation are the core. Embeddings do candidate recall. Fine-tuning is a ~40-minute job and is <em>not</em> your bottleneck.</td></tr>
+      <tr><td>Bigger training sets are the goal (5k→50k records)</td><td><span class="b b-x">MIS-FRAMED</span></td><td>Millions of real records are available. The binding constraint is a coherent slice and a fast demo DB. Target ~100k-row demo corpus, 50k–150k real labelled pairs.</td></tr>
+      <tr><td>Augmentation gives valid positive pairs</td><td><span class="b b-u">CONDITIONAL</span></td><td>Only if <strong>identity is real and only surface form is synthetic</strong>. Generate downward from a real canonical record; never perturb strings blindly.</td></tr>
+      <tr><td>~97% accuracy is achievable and reportable</td><td><span class="b b-x">WRONG</span></td><td>DITTO tops out at <strong>75.6 F1</strong> on Structured Amazon-Google. Anyone claiming 97% end-to-end on realistic industrial text is leaking, evaluating on an easy split, or lying.</td></tr>
+      <tr><td>Five output classes are all learnable</td><td><span class="b b-x">WRONG</span></td><td>Four are. <code>FUNCTIONALLY_EQUIVALENT</code> is not learnable from your labels and carries safety liability.</td></tr>
+      <tr><td>Confidence scores mean what they say</td><td><span class="b b-u">NEEDS WORK</span></td><td>Neural matchers are measurably overconfident (ECE 0.004–0.055 on ER benchmarks). Temperature scaling fixes most of it in ten lines.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Engineering assumptions</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Assumption</th><th>Status</th><th>Correction / action</th></tr></thead>
+    <tbody>
+      <tr><td>Needs FAISS + pgvector + Qdrant + Elasticsearch</td><td><span class="b b-x">WRONG</span></td><td>pgvector alone. You are 2–3 orders of magnitude below the crossover point. FAISS stays in offline notebooks only.</td></tr>
+      <tr><td>Redis is needed</td><td><span class="b b-x">WRONG</span></td><td>Queue is Postgres; caching is Postgres + TanStack Query. Redis is a third failure mode for no measured benefit.</td></tr>
+      <tr><td>Spark may be justified</td><td><span class="b b-x">NEVER</span></td><td>Spark on 100k rows is slower than pandas. It invites "how many nodes is your cluster?" with no good answer.</td></tr>
+      <tr><td>Cloud deployment for the demo</td><td><span class="b b-x">INVERTED</span></td><td>Local is primary, cloud is the backup. HF Spaces now needs a paid plan for Docker Spaces; Render's free Postgres <strong>deletes itself after 30 days</strong>.</td></tr>
+      <tr><td>Next.js for the frontend</td><td><span class="b b-x">WRONG TOOL</span></td><td>Every screen is behind auth; there is no SEO requirement. Vite + React SPA, static build, no Node in production.</td></tr>
+      <tr><td>A graph database is needed for §16</td><td><span class="b b-x">WRONG</span></td><td>Your graph is a 2–3 hop star. A recursive CTE over an edge table plus Cytoscape.js renders it.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ C ============ -->
+<section id="c">
+  <div class="shead"><span class="mark">C</span><h2>Solution architecture</h2></div>
+
+  <p class="lead">Two processes and one database. Everything else is a library. This is a deliberate choice: every additional runtime is a thing that can be down on stage, and none of them buy you anything at your scale.</p>
+
+  <pre><b>┌── BROWSER ─────────────────────────────────────────────────────┐</b>
+<b>│</b>  Vite + React SPA (static build, self-hosted fonts, no CDN)    <b>│</b>
+<b>└────────────────────────────┬───────────────────────────────────┘</b>
+                             │ HTTPS · JSON · SSE for job progress
+<b>┌────────────────────────────┴───────────────────────────────────┐</b>
+<b>│  API PROCESS</b> — FastAPI + SQLAlchemy 2.0 async                 <b>│</b>
+<b>│</b>    auth · RBAC · search · review actions · explanations       <b>│</b>
+<b>│</b>    /match (sync, cache-first) · /graph/ego · /analytics       <b>│</b>
+<b>└────────────────────────────┬───────────────────────────────────┘</b>
+                             │ FOR UPDATE SKIP LOCKED
+<b>┌────────────────────────────┴───────────────────────────────────┐</b>
+<b>│  WORKER PROCESS</b> — ingestion + matching pipeline               <b>│</b>
+<b>│</b>    parse → normalise → extract → canonicalise → embed         <b>│</b>
+<b>│</b>    → block → score → calibrate → decide → queue for review    <b>│</b>
+<b>│</b>    ONNX Runtime int8 session loaded once, in-process          <b>│</b>
+<b>└────────────────────────────┬───────────────────────────────────┘</b>
+<b>┌────────────────────────────┴───────────────────────────────────┐</b>
+<b>│  POSTGRESQL 18</b>  ·  one database, one source of truth         <b>│</b>
+<b>│</b>    relational master + mappings + audit                       <b>│</b>
+<b>│</b>    pgvector 0.8 halfvec + HNSW      <span class="c">— dense retrieval</span>       <b>│</b>
+<b>│</b>    tsvector/GIN + pg_trgm/GIN       <span class="c">— lexical retrieval</span>     <b>│</b>
+<b>│</b>    JSONB + promoted numeric columns <span class="c">— attributes</span>            <b>│</b>
+<b>│</b>    RLS                              <span class="c">— per-CPSE isolation</span>     <b>│</b>
+<b>└────────────────────────────────────────────────────────────────┘</b>
+</pre>
+
+  <div class="call">
+    <div class="ct">Why one database is a pitchable feature, not a shortcut</div>
+    <p>Every retrieval in this system is <code>vector similarity ∧ tenant ∧ category ∧ approval-status</code> — a relational query with a vector predicate. Splitting vectors into a separate store means either dual-write reconciliation or a network round-trip back into Postgres, to buy latency you do not need. You get <strong>transactional consistency between a material, its embedding, its approval and its audit row</strong>. "We have no eventual-consistency window between an approval and the record it approves" is a real enterprise answer to a CIO.</p>
+    <p>Write the crossover point into the doc so it reads as costed rather than lazy: <em>"We migrate to a dedicated ANN store when &gt;10M vectors, or p95 retrieval exceeds 200 ms at recall@50 ≥ 0.95, or HNSW rebuild exceeds the maintenance window. None hold at national-pilot scale; all are monitored."</em></p>
+  </div>
+</section>
+
+<!-- ============ D ============ -->
+<section id="d">
+  <div class="shead"><span class="mark">D</span><h2>The AI matching engine</h2></div>
+
+  <p class="lead">Your 14-step pipeline is roughly right in sequence and wrong in emphasis. It puts the difficulty in "Hybrid Scoring" when the difficulty is in extraction, and it treats attribute comparison as a scoring input when it must be a gate.</p>
+
+  <h3>Critique of the proposed pipeline</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Your stage</th><th class="tight">Verdict</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Data Cleaning → Text Normalization</td><td><span class="b b-m">MERGE</span></td><td>One deterministic stage. Splitting them invents a boundary that does not exist.</td></tr>
+      <tr><td>Unit Normalization</td><td><span class="b b-x">MISPLACED</span></td><td>Cannot run before extraction — you must know <em>which</em> number is a length before you can convert it. Move it after extraction.</td></tr>
+      <tr><td>Attribute / Specification Extraction</td><td><span class="b b-v">CORE</span></td><td>This is the whole project. It gets one line in your brief and should get half your ML effort.</td></tr>
+      <tr><td>Material Classification</td><td><span class="b b-j">REFRAME</span></td><td>Not a generic category label — assign an <strong>approved item name</strong>, because the item name determines <em>which attributes are decisive</em>.</td></tr>
+      <tr><td>Semantic Embedding → Candidate Retrieval</td><td><span class="b b-j">EXPAND</span></td><td>Dense alone fails on <code>M10X50</code>. Needs three channels fused by RRF.</td></tr>
+      <tr><td>Specification-Aware Comparison</td><td><span class="b b-v">KEEP</span></td><td>Correct, but its output must be three-valued, not a similarity.</td></tr>
+      <tr><td>Hybrid Scoring</td><td><span class="b b-x">REPLACE</span></td><td><strong>The critical error.</strong> Replace with <code>score = veto × calibrated(features)</code>.</td></tr>
+      <tr><td>Duplicate / Equivalent Classification</td><td><span class="b b-u">NARROW</span></td><td>Drop equivalence from the predicted classes.</td></tr>
+      <tr><td>Confidence Score</td><td><span class="b b-j">UPGRADE</span></td><td>Raw scores are not probabilities. Calibrate, then set thresholds by target precision.</td></tr>
+      <tr><td>—</td><td><span class="b b-v">ADD</span></td><td><strong>Reference matcher</strong> (MPN / drawing number) running <em>before</em> the descriptive matcher.</td></tr>
+      <tr><td>—</td><td><span class="b b-v">ADD</span></td><td><strong>Abstention band</strong> — an explicit "do not decide" output, which is what makes human review a design feature rather than a fallback.</td></tr>
+      <tr><td>—</td><td><span class="b b-v">ADD</span></td><td><strong>Transitive clustering</strong> — A≈B, B≈C, but A vs C never scored. Real, cheap, and genuinely graph-flavoured.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The recommended engine</h3>
+
+  <div class="pipe">
+    <div class="stage"><div class="sn det">01</div><div><div class="st">Ingest &amp; field split</div><div class="sd">Blob descriptions carry embedded structure. Pull out <code>DRG:</code>, <code>REV:</code>, <code>MATERIAL:</code>, <code>MAKE:</code>, legacy codes and vendor suffixes <em>before</em> anything else. Keep the raw row immutable forever.</div></div></div>
+    <div class="stage"><div class="sn det">02</div><div><div class="st">Normalise</div><div class="sd">Case, punctuation, separator unification (<code>X</code>/<code>x</code>/<code>*</code>/<code>×</code>/<code>-</code>), whitespace, then <strong>gazetteer abbreviation expansion</strong>. The gazetteer is LLM-bootstrapped, human-approved, versioned, and is a first-class reviewable artefact — not model-internal knowledge.</div></div></div>
+    <div class="stage"><div class="sn ml">03</div><div><div class="st">Extract attributes — three-layer cascade</div><div class="sd"><strong>(a) grammar/regex</strong> for dimensions, threads, units, standards codes, grades — high precision, deterministic, confidence 1.0, emits a rule ID. <strong>(b) gazetteer + fuzzy</strong> for noun, modifier, material family. <strong>(c) small BIO tagger</strong> for the residual only, trained on LLM-bootstrapped labels. Every value carries provenance: <code>rule:R17</code> / <code>gaz:v3</code> / <code>model:v1.2@0.83</code>.</div></div></div>
+    <div class="stage"><div class="sn ml">04</div><div><div class="st">Assign approved item name (INC)</div><div class="sd">Classification into the item-name dictionary. This is what selects the <strong>attribute template</strong> and therefore which attributes are decisive for this item type. Embedding kNN over the 79,883 FLIS item-name definitions, gated by a gazetteer of noun heads.</div></div></div>
+    <div class="stage"><div class="sn det">05</div><div><div class="st">Canonicalise</div><div class="sd">Pint converts every quantity to canonical units. Emit the <strong>canonical spec key</strong>, the <strong>full canonical description</strong>, and a <strong>≤40-char SAP-compatible short text</strong>. That last one nobody else at SIH will think of.</div></div></div>
+    <div class="stage"><div class="sn det">06</div><div><div class="st">Reference match (runs first)</div><div class="sd">Normalised manufacturer + normalised MPN, or drawing number + revision. Exact match here is near-proof of identity and bypasses the descriptive path. <strong>Trap:</strong> same drawing number with different revisions is <em>not</em> identity.</div></div></div>
+    <div class="stage"><div class="sn ml">07</div><div><div class="st">Retrieve candidates — three channels, RRF-fused</div><div class="sd"><strong>(a)</strong> HNSW over fine-tuned <code>bge-base-en-v1.5</code> of the canonical string. <strong>(b)</strong> BM25 over a <em>spec-aware tokenizer</em> emitting <code>thread=M10</code>, <code>len_mm=50</code> as atomic tokens plus char 3–4-grams. <strong>(c)</strong> exact canonical-spec-key lookup. Fuse with RRF, k=60. Metric that matters: <strong>pair completeness</strong>, which caps everything downstream.</div></div></div>
+    <div class="stage"><div class="sn det">08</div><div><div class="st">Compare attributes — three-valued</div><div class="sd">Per attribute: <span class="v-ok">AGREE</span> / <span class="v-no">DISAGREE</span> / <span class="v-un">UNKNOWN</span>, with a per-attribute tolerance policy. <strong>Missing ≠ mismatched.</strong> UNKNOWN never contributes negative evidence and is never silently treated as agreement.</div></div></div>
+    <div class="stage"><div class="sn ml">09</div><div><div class="st">Cross-encoder rerank</div><div class="sd">DITTO-style: <code>[CLS] [COL] attr [VAL] val … [SEP] …</code> with span tags <code>[THREAD] [LEN] [GRADE]</code>. This <em>is</em> your reranker — not a separate model from "the DITTO model". Cached in <code>match_candidate</code> keyed by <code>(src, dst, model_version)</code>.</div></div></div>
+    <div class="stage"><div class="sn veto">10</div><div><div class="st">VETO GATE</div><div class="sd">Any <strong>DISAGREE on a CRITICAL attribute → score is forced to zero.</strong> Not a penalty. Not low confidence. Rejected, with the vetoing attribute named. Dimension mismatch (<code>50 mm</code> vs <code>50 kg</code>) is also a veto — Pint raises on incompatible units for free.</div></div></div>
+    <div class="stage"><div class="sn ml">11</div><div><div class="st">Score &amp; calibrate</div><div class="sd">Logistic regression (~15 features) over neural score, attribute agreement, lexical similarity, unknown-counts. Temperature-scale the neural head; Platt or isotonic on the ensemble depending on calibration-set size.</div></div></div>
+    <div class="stage"><div class="sn det">12</div><div><div class="st">Decide with abstention</div><div class="sd">Two thresholds, three zones. Auto-approve band chosen by <strong>target precision with a Clopper–Pearson lower bound</strong>, not by F1. Class-conditional split conformal for the abstention set.</div></div></div>
+    <div class="stage"><div class="sn det">13</div><div><div class="st">Explain</div><div class="sd">The attribute table is computed, always. LLM narration optional, local, and never on the decision path.</div></div></div>
+    <div class="stage"><div class="sn det">14</div><div><div class="st">Human review → unified master</div><div class="sd">Append-only decision log capturing model version, <em>gazetteer version</em>, <em>tolerance-policy version</em> and thresholds. A decision must be replayable in 2029.</div></div></div>
+    <div class="legend">
+      <span><i style="background:var(--muted)"></i>deterministic</span>
+      <span><i style="background:var(--oxide)"></i>learned</span>
+      <span><i style="background:var(--stop)"></i>hard gate</span>
+      <span><i style="background:var(--accent)"></i>—</span>
+    </div>
+  </div>
+
+  <h3>The scoring function</h3>
+  <pre><span class="c"># Identity is decided by structure. Similarity only proposes candidates.</span>
+
+gates    = [g(a) for a in attrs if a.criticality == <b>CRITICAL</b>]
+           <span class="c"># g(a) = 1 if AGREE or UNKNOWN, 0 if DISAGREE</span>
+<span class="hl">veto     = min(gates)                    # 0 kills the pair outright</span>
+
+s_neural = cross_encoder(serialised_pair)          <span class="c"># [0,1]</span>
+s_attr   = weighted_agreement(IMPORTANT, MINOR)    <span class="c"># [0,1]</span>
+s_lex    = normalised_lexical_similarity           <span class="c"># [0,1]</span>
+
+s_raw    = calibrator([s_neural, s_attr, s_lex,
+                       n_unknown, n_critical_known, ...])
+
+<span class="hl">score    = veto * s_raw</span>
+klass    = decide(score, veto, disagreeing_attributes)
+</pre>
+
+  <div class="call stop">
+    <div class="ct">Why a gate and not a weight</div>
+    <p>A weighted blend can always be overwhelmed. If the cosine similarity between <code>SS HEX BOLT M10 X 50</code> and <code>SS HEX BOLT M10 X 75</code> is 0.985 — and it will be, because for natural language those strings <em>are</em> nearly identical — then any weighting scheme that lets a strong text signal outvote a length mismatch will eventually merge them. The embedding model is not broken; it is correctly doing a job that is the wrong job.</p>
+    <p>Under a gate, that merge is not unlikely. It is <strong>impossible</strong>. That is the difference between a system a refinery could deploy and a system that looks good in a slide.</p>
+  </div>
+
+  <h3>Handling the hard cases</h3>
+  <div class="tw"><table>
+    <thead><tr><th class="tight">Case</th><th>Treatment</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Missing attribute</strong></td><td>UNKNOWN. Contributes zero evidence — neither confirms nor denies. Widens the confidence interval without moving the point estimate. This is the Fellegi–Sunter (1969) treatment of missing fields, and citing that lineage reads as competence.</td></tr>
+      <tr><td><strong>Conflicting attribute</strong></td><td>DISAGREE. If CRITICAL → veto. If MINOR → confidence penalty only. Conflating this with UNKNOWN is the single most common design error here.</td></tr>
+      <tr><td><strong>Numeric tolerance</strong></td><td>Per-attribute, versioned, with recorded provenance. Thread diameter: <code>tol=0</code>, because thread sizes are discrete not continuous. Length: <code>tol_abs=0.5mm</code>. Weight: <code>tol_rel=0.05</code>. <strong>Never invent a global ±5%.</strong> Where unknown, set 0 and let a human widen it — a false negative goes to a reviewer, a false positive corrupts the national master.</td></tr>
+      <tr><td><strong>Unit inference</strong></td><td><code>M10 X 50</code> has no units. Infer mm from the metric thread prefix, and <strong>surface the inference</strong>: <code>length: 50 (unit inferred: mm, rule THREAD_METRIC_IMPLIES_MM)</code>.</td></tr>
+      <tr><td><strong>Pack-size units</strong></td><td><code>EA</code>/<code>NO</code>/<code>PC</code>/<code>NOS</code>/<code>U</code> are synonyms for "each". <code>SET</code>/<code>PR</code>/<code>BOX-100</code>/<code>RL</code> are <em>quantities of</em> an item. Two records differing only in <code>EA</code> vs <code>BOX-100</code> are the same material — a duplicate class your brief's framing would miss.</td></tr>
+      <tr><td><strong>Abbreviations</strong></td><td>Learned, not hand-written: LLM proposes candidates from 5,000 distinct descriptions offline, a human accepts/rejects, the result is a versioned dictionary. FLIS ships <code>V_COLLOQUIAL_NAME</code> — a real curated alias dictionary — for free.</td></tr>
+      <tr><td><strong>Multilingual</strong></td><td><strong>Cut for v1</strong> pending verification. Handle transliteration noise and Indian-English abbreviations instead. Revisit only if a domain contact confirms non-English descriptions exist.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Output classes — final recommendation</h3>
+  <div class="tw"><table>
+    <thead><tr><th class="tight">Class</th><th>Technical definition</th><th class="tight">Predicted?</th></tr></thead>
+    <tbody>
+      <tr><td><strong>IDENTICAL</strong></td><td>Same item name; all CRITICAL and IMPORTANT attributes AGREE; no UNKNOWNs on CRITICAL. Or: exact normalised MPN + manufacturer match.</td><td><span class="b b-v">YES</span></td></tr>
+      <tr><td><strong>DUPLICATE</strong></td><td>Same item name; all CRITICAL AGREE; ≥1 MINOR differs or is UNKNOWN. Different codes, same material.</td><td><span class="b b-v">YES</span></td></tr>
+      <tr><td><strong>NEAR_DUPLICATE</strong></td><td>Same item name; all CRITICAL AGREE; ≥1 <em>IMPORTANT</em> attribute DISAGREES. Related but not the same.</td><td><span class="b b-v">YES</span></td></tr>
+      <tr><td><strong>DISTINCT</strong></td><td>Different item name, or ≥1 CRITICAL attribute DISAGREES (veto fired).</td><td><span class="b b-v">YES</span></td></tr>
+      <tr><td><strong>REVIEW</strong></td><td>Score falls in the abstention band, or CRITICAL attributes are UNKNOWN on either side. <em>An output, not a failure.</em></td><td><span class="b b-v">YES</span></td></tr>
+      <tr><td><strong>EQUIVALENCE_<br>CANDIDATE</strong></td><td>Same item name, all CRITICAL AGREE, but differs on a certification/grade attribute. <strong>Recorded and displayed, never predicted as a merge. Cannot be auto-approved at any confidence.</strong></td><td><span class="b b-x">NO — human-asserted only</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call oxide">
+    <div class="ct">Turn your biggest weakness into your best slide</div>
+    <p>In petroleum refining, declaring two items interchangeable has statutory consequences: pressure class (ASME B16.5), material certification (NACE MR0175 for sour service), hazardous-area certification (ATEX/IECEx/PESO), fire-safe design, OEM warranty. A system that autonomously asserts functional equivalence is a liability, and a CPCL judge will spot it in seconds.</p>
+    <p>So make the refusal a <strong>feature you demo on purpose</strong>. Show the system finding a genuine equivalence candidate, and show it declining to act: <em>"the AI is deliberately not permitted to make this call — it routes to a materials engineer."</em> That single design decision converts your most attackable class into your most mature-sounding moment.</p>
+  </div>
+
+  <h3>Worked trace — the demo moment</h3>
+  <p>Source: <code>ONGC · MAT-78291 · "SS HEX BOLT M10 X 50"</code></p>
+
+  <div class="trace">
+    <div class="trace-h">Candidate 1 — NTPC · BLT-10922 · "STAINLESS STEEL HEXAGONAL BOLT 10MM X 50MM"</div>
+    <div class="trace-b">
+      <div class="trow hdr"><div>Attribute</div><div>Source</div><div>Candidate</div><div>Result</div></div>
+      <div class="trow"><div class="attr">Item name</div><div class="val">BOLT, HEX HEAD</div><div class="val">BOLT, HEX HEAD</div><div class="v-ok">AGREE</div></div>
+      <div class="trow"><div class="attr">Material <span class="b b-x">CRIT</span></div><div class="val">SS → STAINLESS STEEL</div><div class="val">STAINLESS STEEL</div><div class="v-ok">AGREE</div></div>
+      <div class="trow"><div class="attr">Thread dia <span class="b b-x">CRIT</span></div><div class="val">M10 → 10.0 mm</div><div class="val">10MM → 10.0 mm</div><div class="v-ok">AGREE</div></div>
+      <div class="trow"><div class="attr">Length <span class="b b-x">CRIT</span></div><div class="val">50 → 50.0 mm <span class="b b-m">inferred</span></div><div class="val">50MM → 50.0 mm</div><div class="v-ok">AGREE</div></div>
+      <div class="trow"><div class="attr">Head style</div><div class="val">HEX → HEXAGONAL</div><div class="val">HEXAGONAL</div><div class="v-ok">AGREE</div></div>
+      <div class="trow"><div class="attr">Grade</div><div class="val">—</div><div class="val">—</div><div class="v-un">UNKNOWN</div></div>
+    </div>
+    <div class="trace-f">veto = <strong>1</strong> · cross-encoder 0.94 · attribute agreement 5/5 known, 1 unknown · calibrated <strong>0.972</strong> → <strong style="color:var(--ok)">DUPLICATE</strong>, above auto-approve threshold, routed to reviewer for confirmation.</div>
+  </div>
+
+  <div class="trace">
+    <div class="trace-h">Candidate 2 — IOCL · XJ-55291 · "BOLT HEX SS M10*75"</div>
+    <div class="trace-b">
+      <div class="trow hdr"><div>Attribute</div><div>Source</div><div>Candidate</div><div>Result</div></div>
+      <div class="trow"><div class="attr">Item name</div><div class="val">BOLT, HEX HEAD</div><div class="val">BOLT, HEX HEAD</div><div class="v-ok">AGREE</div></div>
+      <div class="trow"><div class="attr">Material <span class="b b-x">CRIT</span></div><div class="val">STAINLESS STEEL</div><div class="val">STAINLESS STEEL</div><div class="v-ok">AGREE</div></div>
+      <div class="trow"><div class="attr">Thread dia <span class="b b-x">CRIT</span></div><div class="val">10.0 mm</div><div class="val">10.0 mm</div><div class="v-ok">AGREE</div></div>
+      <div class="trow"><div class="attr">Length <span class="b b-x">CRIT</span></div><div class="val">50.0 mm</div><div class="val">75.0 mm</div><div class="v-no">DISAGREE</div></div>
+      <div class="trow"><div class="attr">Head style</div><div class="val">HEXAGONAL</div><div class="val">HEXAGONAL</div><div class="v-ok">AGREE</div></div>
+    </div>
+    <div class="trace-f">Text cosine <strong>0.981</strong> — higher than many true duplicates. veto = <strong>0</strong> (length, CRITICAL, tolerance 0.5 mm, differs by 25 mm) → <strong style="color:var(--stop)">DISTINCT</strong>. <em>"Rejected on length. The similarity score was 0.98 and it did not matter."</em></div>
+  </div>
+
+  <div class="trace">
+    <div class="trace-h">Candidate 3 — BHEL · 440918 · "NUT HEX SS M10"</div>
+    <div class="trace-b">
+      <div class="trow hdr"><div>Attribute</div><div>Source</div><div>Candidate</div><div>Result</div></div>
+      <div class="trow"><div class="attr">Item name <span class="b b-x">CRIT</span></div><div class="val">BOLT, HEX HEAD</div><div class="val">NUT, PLAIN HEX</div><div class="v-no">DISAGREE</div></div>
+      <div class="trow"><div class="attr">Material</div><div class="val">STAINLESS STEEL</div><div class="val">STAINLESS STEEL</div><div class="v-ok">AGREE</div></div>
+      <div class="trow"><div class="attr">Thread dia</div><div class="val">10.0 mm</div><div class="val">10.0 mm</div><div class="v-ok">AGREE</div></div>
+    </div>
+    <div class="trace-f">veto = <strong>0</strong> (item name differs — a bolt is not a nut) → <strong style="color:var(--stop)">DISTINCT</strong>, rejected before any numeric comparison is needed.</div>
+  </div>
+
+  <h3>Where an LLM belongs</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Task</th><th class="tight">LLM?</th><th>Reasoning</th></tr></thead>
+    <tbody>
+      <tr><td>Bootstrap the abbreviation gazetteer</td><td><span class="b b-v">YES</span></td><td>Offline, human-gated, runs once. Compresses months of domain-expert time into days. Highest ROI in the project.</td></tr>
+      <tr><td>Bootstrap BIO labels for the tagger</td><td><span class="b b-v">YES</span></td><td>Offline weak supervision with human spot-check. Standard practice.</td></tr>
+      <tr><td>Generate synthetic surface variants (test-set G2)</td><td><span class="b b-v">YES</span></td><td>Identity is fixed by construction; the LLM only rewords.</td></tr>
+      <tr><td>Narrate the explanation table</td><td><span class="b b-u">OPTIONAL</span></td><td>May <em>phrase</em> facts it did not compute. Raw table always visible alongside. Degrades to template if unavailable.</td></tr>
+      <tr><td>Cluster failure modes during error analysis</td><td><span class="b b-v">YES</span></td><td>Developer tool, not a product feature.</td></tr>
+      <tr><td><strong>Decide whether two materials match</strong></td><td><span class="b b-x">NEVER</span></td><td>Non-determinism breaks audit replay; cost is 20M calls per full pass at 1M records; latency kills the sub-second creation-time check; and it has the <em>same</em> numeric weakness with better prose.</td></tr>
+      <tr><td><strong>Generate ground-truth labels</strong></td><td><span class="b b-x">NEVER</span></td><td>Label laundering. Your metrics would measure agreement with a language model, not correctness. "An LLM said so" is a losing answer; "the DLA's Item Standardization Code" is a winning one.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call">
+    <div class="ct">Architectural constraint to write into the approval document</div>
+    <p><strong>An LLM may never be on the online decision path.</strong> Offline, human-gated, and as an explanation renderer only. If you want the GenAI line without the liability, run a local quantised 1–4B model for the offline normalisation and narration tasks — then the answer to "does CPSE data ever leave the organisation?" is <em>no, ever</em>, which for a government platform is worth more than a few points of accuracy.</p>
+  </div>
+</section>
+
+<!-- ============ E ============ -->
+<section id="e">
+  <div class="shead"><span class="mark">E</span><h2>Dataset &amp; training strategy</h2></div>
+
+  <p class="lead">The single highest-value action in this entire plan takes two hours and can be done today: download the DLA PUB LOG archives in a browser and hash them.</p>
+
+  <h3>The primary source</h3>
+  <p><strong>DLA FLIS / PUB LOG Electronic Reading Room</strong> — <code>dla.mil/Information-Operations/FLIS-Data-Electronic-Reading-Room/</code>. Free monthly CSVs, no login, no registration, no payment. Published in a FOIA reading room by a US federal agency; works of the US federal government are not subject to domestic copyright. <span class="b b-v">VERIFIED — files last updated 24 Aug 2026</span></p>
+
+  <div class="tw"><table>
+    <thead><tr><th>File</th><th class="tight">Rows</th><th>What it gives you</th></tr></thead>
+    <tbody>
+      <tr><td><code>P_H6_PICK</code> / <code>V_H6_NAME_INC</code></td><td class="num">79,883</td><td>Approved item names, each with an English definition. Your INC dictionary, free.</td></tr>
+      <tr><td><code>MRD0107</code></td><td class="num">27,552</td><td><strong>Attribute dictionary</strong> — code → requirement statement → definition.</td></tr>
+      <tr><td><code>MRD06P1</code></td><td class="num">45,305</td><td><strong>Which attributes apply to which item name.</strong> The most important table in the system — it tells you which attributes are decisive for a given item type.</td></tr>
+      <tr><td><code>MRD0300</code></td><td class="num">164,926</td><td>Controlled-vocabulary reply values for coded attributes.</td></tr>
+      <tr><td><code>V_H6_RELATED</code></td><td class="num">33,930</td><td>Item-name pairs a national codification authority thought confusable enough to cross-reference. <strong>A curated hard-negative mine you could not buy.</strong></td></tr>
+      <tr><td><code>V_COLLOQUIAL_NAME</code></td><td class="num">~30k</td><td>Real curated alias dictionary — the "learn abbreviations" resource, pre-built.</td></tr>
+      <tr><td><code>V_FLIS_PART</code></td><td class="num">~millions</td><td><strong>GROUND TRUTH 1</strong> — many manufacturer part numbers → one canonical item.</td></tr>
+      <tr><td><code>V_FLIS_STANDARDIZATION</code></td><td class="num">≈18.6M<span class="b b-u">est</span></td><td><strong>GROUND TRUTH 2</strong> — human standardization decisions: item X replaces item Y.</td></tr>
+      <tr><td><code>FLISV</code></td><td class="num">≈51M<span class="b b-u">est</span></td><td>Coded attribute assertions — machine-comparable without NLP.</td></tr>
+      <tr><td><code>V_H2_FSC</code></td><td class="num">676</td><td>Supply classes with human-written inclusion/exclusion scope rules.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call warn">
+    <div class="ct">Download blocker you will hit</div>
+    <p><code>dla.mil</code> sits behind a WAF that fingerprints non-browser clients — <code>curl</code> and scripted fetchers get <strong>HTTP 403</strong>, while a real desktop browser downloads fine. <span class="b b-v">VERIFIED both ways</span></p>
+    <p><strong>Download manually, in a browser, this week. Then <code>sha256sum *.zip &gt; MANIFEST.txt</code>, record the date, and archive to a team drive.</strong> Treat <code>dla.mil</code> as a one-time source and <em>never</em> a runtime dependency. The fallback for the primary source is having already taken it.</p>
+  </div>
+
+  <h4>The slice to take — ~1.4 GB, not 11 GB</h4>
+  <p><code>H-SERIES.zip</code> (14.6 MB) and <code>MRD.zip</code> (4.2 MB) first — tiny and immediately useful. Then <code>IDENTIFICATION</code> (346 MB), <code>REFERENCE</code> (172 MB), <code>FLISV</code> (367 MB), and optionally <code>CHARACTERISTICS</code> (500 MB, a ready-made supervised attribute-extraction training set). Filter the multi-GB files on the fly while streaming — never load them whole.</p>
+
+  <h4>Recommended commodity slice</h4>
+  <p>Pick 6 families before downloading, not after. These are the categories that exist in every CPSE store, have rich dimensional attributes, and make the <code>M10×50</code> argument visceral to a non-technical judge.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Family</th><th class="tight">FSC</th><th>Why it earns its place</th></tr></thead>
+    <tbody>
+      <tr><td>Fasteners</td><td class="tight">5305/5306/5310</td><td>The clean textbook case; establishes the mechanism</td></tr>
+      <tr><td>Pipes, flanges, gaskets</td><td class="tight">4710/4730/5330</td><td>Standards-driven: NPS + schedule + class + facing</td></tr>
+      <tr><td>Valves</td><td class="tight">4810/4820</td><td><strong>The family a refinery judge cares about.</strong> Multi-attribute, high consequence</td></tr>
+      <tr><td>Bearings</td><td class="tight">3110/3120</td><td>Shows the <strong>reference method</strong> — <code>6205-2RS</code> matching across unrelated descriptions</td></tr>
+      <tr><td>Motors &amp; cables</td><td class="tight">6105/6145</td><td>Shows hazardous-area certification as a veto attribute</td></tr>
+      <tr><td>Lubricants</td><td class="tight">9150</td><td>Brand-vs-spec equivalence, and why you <em>refuse</em> to auto-equate</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Where the labels come from — solving the hardest problem</h3>
+  <p>You cannot train a supervised matcher without labelled pairs, and you have no labelled CPSE duplicates. Here is the full ladder, best first.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Source of labels</th><th class="tight">Quality</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Real: many MPNs → one NIIN</strong></td><td><span class="b b-v">GOLD</span></td><td>Observed identity from a real catalogue. This is "many organisations' codes for the same physical item" — literally your problem.</td></tr>
+      <tr><td><strong>Real: standardization decisions</strong></td><td><span class="b b-v">GOLD</span></td><td>Human authority decided X replaces Y. <strong>Measure the yield in your FSC slice before promising this class</strong> — most rows in a sample had empty <code>RELATED_NSN</code>.</td></tr>
+      <tr><td><strong>Derived: attribute-vector equality</strong></td><td><span class="b b-j">STRONG</span></td><td>Same item name, all decisive attributes equal, from real coded values. True by construction over real data.</td></tr>
+      <tr><td><strong>Constructed: surface variants</strong></td><td><span class="b b-j">STRONG</span></td><td>Valid because the underlying entity is provably the same, not because you asserted it.</td></tr>
+      <tr><td><strong>Hand-labelled real Indian pairs</strong></td><td><span class="b b-v">GOLD</span></td><td>300–500 pairs, one person-week. <strong>Spend these on the TEST set, never on training.</strong></td></tr>
+      <tr><td>LLM-generated labels</td><td><span class="b b-x">FORBIDDEN</span></td><td>Label laundering. Metrics would measure agreement with a language model.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Synthetic data — the rule that makes it rigorous</h3>
+  <div class="call ok">
+    <div class="ct">Real identity, synthetic surface</div>
+    <p><strong>Indefensible:</strong> invent items, invent which pairs match, train, report 97% F1. The model has learned only your generator, and a competent evaluator will say so.</p>
+    <p><strong>Defensible:</strong> take a real canonical item with a real code, real classification and real attribute values; apply a surface transformation that provably preserves identity. The pair is positive <em>because the underlying entity is the same</em>.</p>
+    <p><strong>And never let one generator produce both training and test data.</strong> Train on rule-based generator G1; test on a deliberately different generator G2 (an LLM asked to rewrite as an Indian storekeeper would), with entity-disjoint items.</p>
+  </div>
+
+  <h4>Variant operators — which preserve identity</h4>
+  <div class="tw"><table>
+    <thead><tr><th>Operator</th><th>Example</th><th class="tight">Safe?</th></tr></thead>
+    <tbody>
+      <tr><td>Abbreviation / expansion</td><td><code>STAINLESS STEEL</code> ↔ <code>SS</code></td><td><span class="b b-v">SAFE</span></td></tr>
+      <tr><td>Token reordering</td><td><code>SS HEX BOLT</code> → <code>BOLT HEX SS</code></td><td><span class="b b-v">SAFE</span></td></tr>
+      <tr><td>Separator variation</td><td><code>M10 X 50</code> / <code>M10X50</code> / <code>M10*50</code></td><td><span class="b b-v">SAFE</span></td></tr>
+      <tr><td>Unit-form change</td><td><code>50</code> → <code>50MM</code> → <code>50 M.M.</code></td><td><span class="b b-v">SAFE</span></td></tr>
+      <tr><td>Vendor/legacy suffix insertion</td><td>append <code>MAKE: L&amp;T</code>, old code</td><td><span class="b b-v">SAFE</span></td></tr>
+      <tr><td>40-char truncation</td><td>drop trailing tokens</td><td><span class="b b-u">CAREFUL</span> — can remove a decisive attribute; label the pair UNKNOWN-on-that-attribute, not DISAGREE</td></tr>
+      <tr><td>Typos at a measured rate</td><td><code>STAINLES</code></td><td><span class="b b-u">CAREFUL</span> — calibrate rate against real data</td></tr>
+      <tr><td>Numeric perturbation</td><td><code>50</code> → <code>75</code></td><td><span class="b b-x">NEGATIVE</span> — this is a hard negative, never a positive</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>Hard negatives — mined from real catalogue structure</h4>
+  <div class="tw"><table>
+    <thead><tr><th>Negative type</th><th>How to mine it from real data</th></tr></thead>
+    <tbody>
+      <tr><td>One dimension differs</td><td>Same item name, same class; coded attributes differ in exactly one dimensional field</td></tr>
+      <tr><td>Material differs</td><td>Same item name; differs only on the material attribute (SS304 vs SS316 is a <em>genuinely different material</em> — judges may probe this)</td></tr>
+      <tr><td>Wrong noun type</td><td>Different item name within the same supply class — bolt vs nut vs stud</td></tr>
+      <tr><td>Near-synonym trap</td><td>The 33,930 real confusable item-name pairs in <code>V_H6_RELATED</code></td></tr>
+      <tr><td>Unit trap</td><td><code>M10</code> vs <code>10 inch</code>; <code>50 mm</code> vs <code>50 cm</code></td></tr>
+      <tr><td>Same name, different class</td><td>Identical item-name strings appearing under two different supply classes</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call stop">
+    <div class="ct">The shortcut failure mode — guard against it explicitly</div>
+    <p>If all your positives come from augmentation and all your negatives from spec mutation, the model can learn <em>the artefacts of your generator</em> rather than the semantics — e.g. "records differing by exactly one integer are negatives." It will score beautifully and be useless.</p>
+    <p>Two guards, both mandatory: <strong>(a)</strong> a held-out set of hand-labelled real pairs; <strong>(b)</strong> an ablation that tests on real pairs only. Mix ~50% constructed negatives with ~50% mined-from-corpus negatives so the model also learns lexical confusables you did not think of.</p>
+  </div>
+
+  <h3>Splits, and the leakage trap</h3>
+  <div class="call warn">
+    <div class="ct">Split by entity, never by pair</div>
+    <p>If you split pairs randomly you will leak augmented variants of the same canonical material across train and test, and your F1 becomes fiction. <strong>This is the single most common way student ML projects produce fake numbers.</strong> Hold out entire canonical materials. Make it a code-review checklist item, and run the pair-level-split ablation deliberately so you can <em>show</em> the inflation it causes.</p>
+  </div>
+
+  <h3>Four test sets, reported separately, always</h3>
+  <div class="tw"><table>
+    <thead><tr><th class="tight">Set</th><th>Composition</th><th>What it proves</th></tr></thead>
+    <tbody>
+      <tr><td><strong>A</strong></td><td>Synthetic surface from generator G2, entity-disjoint from training</td><td>Generalisation beyond your own generator's rules</td></tr>
+      <tr><td><strong>B</strong></td><td><strong>100% real</strong> — real part-number groups and real standardization pairs, zero synthesis</td><td>The system reproduces real human codification decisions</td></tr>
+      <tr><td><strong>C</strong></td><td>200–500 hand-collected Indian CPSE tender description lines, hand-labelled</td><td>It survives contact with real Indian description style</td></tr>
+      <tr><td><strong>D</strong></td><td>WDC Products (100%-unseen variant), Abt-Buy, Walmart-Amazon Dirty, PriceRunner</td><td><strong>Real numbers against published baselines.</strong> One day of work, more credibility than any UI feature</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Real vs synthetic — the honest accounting</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Layer</th><th class="tight">Real</th><th class="tight">Synthetic</th></tr></thead>
+    <tbody>
+      <tr><td>Item identity — what the thing is</td><td class="num"><strong>100%</strong></td><td class="num">0%</td></tr>
+      <tr><td>Classification</td><td class="num"><strong>100%</strong></td><td class="num">0%</td></tr>
+      <tr><td>Attribute schema — which attributes matter</td><td class="num"><strong>100%</strong></td><td class="num">0%</td></tr>
+      <tr><td>Attribute values</td><td class="num"><strong>100%</strong></td><td class="num">0%</td></tr>
+      <tr><td>Match / no-match labels</td><td class="num"><strong>~100%</strong> derived</td><td class="num">0% asserted</td></tr>
+      <tr><td>Description surface text</td><td class="num">~1–3%</td><td class="num"><strong>~97%</strong></td></tr>
+      <tr><td>CPSE identity &amp; internal codes</td><td class="num">0%</td><td class="num"><strong>100%</strong> simulated</td></tr>
+      <tr><td>Dashboard figures</td><td class="num">0%</td><td class="num"><strong>100%</strong> demo data</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call ok">
+    <div class="ct">The sentence to say on stage — before anyone asks</div>
+    <p><em>"Our canonical items, their classification, their attribute schema and every match label come from the US Defense Logistics Agency's publicly released FLIS catalogue — roughly 80,000 approved item names, 27,000 attribute definitions, and real human standardization decisions, built on the same NATO Codification System that India's own National Codification Bureau adopted in 2008. What we generate synthetically is only the surface text — the messy, abbreviated way five different CPSEs would each write down the same real item — because no Indian CPSE material master is public, and we will not scrape one. Our reported accuracy separates the two."</em></p>
+    <p>Volunteering the limitation with this specificity converts your biggest vulnerability into your strongest credibility signal. Teams that hide it get destroyed in Q&amp;A.</p>
+  </div>
+
+  <h4>Fallback ladder</h4>
+  <ol>
+    <li><strong>F1 — already taken.</strong> You downloaded and hashed the ZIPs in week 1. This is why it is week 1.</li>
+    <li><strong>F2 — pivot to BOLTS + UNSPSC + GSA extract.</strong> <a href="https://github.com/boltsparts/BOLTS_archive">BOLTS</a> gives real standards-backed canonical items with typed attribute schemas and enumerated legal values (LGPL-2.1+ on the data files). UNSPSC via the UNGM Excel export (13,335 codes, verified downloadable). GSA NSN extract, CC0, 12,454 real prose descriptions. Cost: ~3 days, and the claim weakens from "we reproduce real standardization decisions" to "we reproduce standards-defined identity". Still honest.</li>
+    <li><strong>F3 — benchmark-only credibility floor.</strong> Even in total domain-data failure, WDC Products + the DeepMatcher suite + PriceRunner let you report real measured F1 against published baselines. Costs one day. <strong>Secure it in week 3, not week 9.</strong></li>
+  </ol>
+
+  <div class="call stop">
+    <div class="ct">What you must not do under pressure</div>
+    <p>Scrape GeM. Defeat the CPPP CAPTCHA. Scrape McMaster or IndiaMART. Generate labels with an LLM and present them as ground truth. Every one converts a recoverable data problem into an unrecoverable credibility problem.</p>
+  </div>
+</section>
+
+<!-- ============ F ============ -->
+<section id="f">
+  <div class="shead"><span class="mark">F</span><h2>Model strategy</h2></div>
+
+  <p class="lead">Direct answers to every model question the brief asks, with a verdict rather than a menu.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Question</th><th class="tight">Verdict</th><th>Reasoning</th></tr></thead>
+    <tbody>
+      <tr><td>Transformer embeddings?</td><td><span class="b b-v">YES</span></td><td>For candidate <em>recall</em> only. <code>bge-base-en-v1.5</code> — 768-dim, 512 seq, 0.1B params, <strong>MIT licence</strong>. The cleanest possible licence story for a government platform.</td></tr>
+      <tr><td>Fine-tune a sentence-transformer?</td><td><span class="b b-v">YES, but late</span></td><td>~20–50 min on a free T4 for 50k pairs × 3 epochs at <code>max_seq_len=64</code>. It is <strong>not your bottleneck</strong> — you can do five runs in an evening. Do it after extraction works.</td></tr>
+      <tr><td>Contrastive learning?</td><td><span class="b b-v">YES</span></td><td><code>CachedMultipleNegativesRankingLoss</code> for large virtual batch sizes on 16 GB. Batch size is the dominant hyperparameter, more than LR or epochs.</td></tr>
+      <tr><td>Cross-encoders?</td><td><span class="b b-v">YES</span></td><td>DITTO-style over serialised pairs with spec span tags. <strong>This is your reranker</strong> — do not build "an embedding model" and "a DITTO model" as two things.</td></tr>
+      <tr><td>Two-stage retrieval?</td><td><span class="b b-v">YES</span></td><td>Retriever governs recall@k; reranker governs precision@1–5. A reranker cannot recover a match the retriever never returned. Tune retrieval for <strong>recall@50 ≥ 0.99</strong> and ignore its precision entirely.</td></tr>
+      <tr><td>RAG?</td><td><span class="b b-x">NO</span></td><td>There is no generation step that needs grounding. You have retrieval and classification. Calling it RAG would be a fashion label on a two-stage retriever, and a judge who knows the term will ask what is being generated.</td></tr>
+      <tr><td>LLM in the pipeline?</td><td><span class="b b-u">OFFLINE ONLY</span></td><td>See §D. Never on the decision path.</td></tr>
+      <tr><td>Gradient boosting over features?</td><td><span class="b b-v">YES — build first</span></td><td>~25–40 pair features, LightGBM trains in seconds on CPU. This is your real baseline and it may well be your final scorer. Prefer logistic regression at the top level for explainability; escalate only if it measurably underperforms.</td></tr>
+      <tr><td>LoRA / PEFT?</td><td><span class="b b-x">NO</span></td><td>Pointless below ~1B params. Full fine-tune of a 0.1B model is simpler and better; LoRA adds a dependency and a class of subtle bugs.</td></tr>
+      <tr><td>ColBERT / SPLADE?</td><td><span class="b b-x">NO</span></td><td>ColBERT's index blowup buys a signal hybrid BM25 already gives free. SPLADE's vocabulary expansion is trained on natural language and does nothing for <code>M10X50</code>.</td></tr>
+      <tr><td>Multilingual embeddings?</td><td><span class="b b-u">DEFER</span></td><td>Probably solving a problem you do not have. Verify with a domain contact first.</td></tr>
+      <tr><td>Static embeddings (Model2Vec)?</td><td><span class="b b-j">MEASURE IT</span></td><td>~100–400× faster on CPU. Order-insensitive, which is normally fatal — but in this architecture the embedding only does recall, and discrimination comes from the deterministic attribute stage. Make it an ablation row. Either result is a good slide.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call">
+    <div class="ct">Why fine-tuning is not where the value is</div>
+    <p>DITTO's gains over the prior state of the art are <strong>+27 to +32 F1 on <em>Dirty</em> and <em>Textual</em> benchmarks but only ~+5 on <em>Structured</em></strong>. After your extraction stage runs, your problem is a Structured problem. Expect single-digit gains from a cross-encoder over a well-engineered feature model — not the 30-point miracle the headline suggests.</p>
+    <p>The team's instinct will be to spend weeks on training tricks. That instinct is wrong here. Your bottleneck is labelled evaluation data and the extraction stage. Allocate accordingly.</p>
+  </div>
+
+  <h4>Calibration recipe</h4>
+  <ol>
+    <li>Hold out a calibration set sampled <strong>the way production data arrives</strong> — random over records, not over pairs, and <strong>not balanced</strong>. A 50/50 set will lie to you about production precision. Log the prevalence.</li>
+    <li>Temperature-scale the neural head (ER-specific evidence: most effective method, ECE reduced up to 23.8%). Platt on the ensemble if <em>n</em>&lt;1000, isotonic if ≥1000.</li>
+    <li>Verify on a <em>separate</em> test set: reliability diagram, ECE, MCE, Brier score. <strong>Put the reliability diagram in the deck</strong> — almost nobody does, and it is instantly legible as rigour.</li>
+    <li>Pick the auto-approve threshold by <strong>target precision with a Clopper–Pearson lower bound</strong>, not by F1: <em>"at threshold t, precision ≥ 99% with 95% confidence, n = N pairs above threshold, covering X% of true duplicates."</em></li>
+    <li>Two thresholds, three zones. Report the <strong>review rate</strong>.</li>
+  </ol>
+
+  <div class="call ok">
+    <div class="ct">This reframes your entire evaluation story</div>
+    <p>"We auto-decide 71% of pairs at ≥99% precision and route 29% to a human" is a far more compelling product claim than any F1 — and it is the framing a government buyer actually cares about. It turns human-in-the-loop from an admission of weakness into the core value proposition: <strong>how much expert time the platform saves at a guaranteed error rate</strong>. Build the deck around this sentence.</p>
+  </div>
+</section>
+
+<!-- ============ G ============ -->
+<section id="g">
+  <div class="shead"><span class="mark">G</span><h2>Data architecture</h2></div>
+
+  <h3>The identity model</h3>
+  <p>Federated identity. The NMC ID is an <strong>additional</strong> identity layer, never a replacement. CPSEs keep their codes forever — they are embedded in decades of purchase orders, contracts, stock records, drawings and vendor systems.</p>
+
+  <pre><b>NMC-00018426</b>  <span class="c">← opaque, non-significant, 8 digits + check digit</span>
+     │
+     ├─ item_name        BOLT, MACHINE, HEX HEAD    <span class="c">← classification is an ATTRIBUTE</span>
+     ├─ unspsc           31161501                    <span class="c">← not part of identity</span>
+     ├─ attributes       thread_dia=10mm, length=50mm, material=SS316 …
+     │
+     └─ mappings <span class="c">(each with its own lifecycle: proposed→approved→superseded→retired)</span>
+          ├─ ONGC  MAT-78291   approved   0.972  reviewer#184  2026-09-14
+          ├─ NTPC  BLT-10922   approved   0.981  reviewer#184  2026-09-14
+          ├─ IOCL  XJ-55291    <span class="hl">disputed</span>   0.883  cpse_admin#12 2026-09-20
+          └─ BHEL  440918      proposed   0.774  —
+</pre>
+
+  <div class="call oxide">
+    <div class="ct">Design the unmap path. Nobody else will.</div>
+    <p>A CPSE must be able to <strong>dispute and unmap</strong>. It is the first thing a materials manager will ask about, and every competing student project will have a one-way merge. Mappings are versioned and superseded, never deleted. Merge <em>and split</em> of canonical materials must both exist — split is the part everyone forgets, and it is needed the moment a reviewer discovers one NMC actually covers two distinct parts.</p>
+  </div>
+
+  <div class="call stop">
+    <div class="ct">Do not design a clever national code</div>
+    <p>Resist the urge to build a 14-digit semantic code where digits encode group / subgroup / dimension. Significant codes break when an item is reclassified, run out of ranges, and encode a taxonomy that will be wrong in five years. The NATO Stock Number gets this right: only the first four digits classify, and the identity itself (the NIIN) is <strong>non-significant</strong>. MESC — the 10-digit hierarchical scheme used in oil &amp; gas, proprietary to Shell — is prior art to <em>cite</em>, not to copy. Spending a week on code format is a week on the least valuable artefact in the project.</p>
+  </div>
+
+  <h3>Schema</h3>
+  <pre><span class="c">-- ORGANISATIONS &amp; SOURCE (raw rows are immutable, forever)</span>
+cpse            (id, code, name, sector, ingest_profile)
+ingest_batch    (id, cpse_id, filename, content_hash, uploaded_by, stats jsonb,
+                 status, started_at, finished_at)
+source_material (id, cpse_id, batch_id, <b>source_code</b>, raw_description text,
+                 raw_row jsonb, <b>provenance</b>, <b>mpn_raw, drawing_no, drawing_rev</b>,
+                 uom_raw, created_at,
+                 UNIQUE (cpse_id, source_code))          <span class="c">← idempotent re-upload</span>
+
+<span class="c">-- NORMALISED + EXTRACTED</span>
+norm_material   (source_id PK, canonical_text, <b>sap_short_text varchar(40)</b>,
+                 inc int, unspsc char(8), spec_key text,
+                 mpn_norm, mfr_norm, quality_score numeric,
+                 embedding <b>halfvec(768)</b>, tsv tsvector)
+attribute_value (source_id, <b>attr_code</b>, value_text, value_num numeric,
+                 unit, canonical_num numeric, canonical_unit,
+                 <b>provenance</b>, confidence numeric,
+                 PRIMARY KEY (source_id, attr_code))
+
+<span class="c">-- THE DICTIONARY (from FLIS; the product you actually own)</span>
+item_name       (inc PK, name, definition, status)
+attr_def        (attr_code PK, label, dtype, canonical_unit,
+                 <b>criticality</b>, tol_abs, tol_rel, compare_mode,
+                 enum_table, provenance, version)
+inc_attr_schema (inc, attr_code, is_mandatory,          <span class="c">← WHICH attrs are decisive</span>
+                 PRIMARY KEY (inc, attr_code))
+abbreviation    (id, short, expansion, family, approved_by, version)
+
+<span class="c">-- THE MASTER</span>
+canonical_material (id PK, <b>nmc_id</b> text UNIQUE, inc, canonical_name,
+                    canonical_text, sap_short_text varchar(40),
+                    unspsc, attributes jsonb, embedding halfvec(768),
+                    status, created_at)
+mapping         (id PK, canonical_id, source_id, <b>status</b>, confidence numeric,
+                 model_version, decided_by, decided_at,
+                 <b>superseded_by</b> uuid, superseded_at,
+                 UNIQUE (source_id) WHERE status='approved')
+
+<span class="c">-- MATCHING + REVIEW</span>
+match_candidate (src_id, dst_id, model_version, retrieval_rank,
+                 s_neural, s_attr, s_lex, <b>veto</b> bool, veto_attr,
+                 score numeric, klass, explanation jsonb,
+                 PRIMARY KEY (src_id, dst_id, model_version))
+review_decision (id, candidate_ref, reviewer_id, action, note, decided_at)
+material_link   (src_id, dst_id, link_type, confidence, created_by, created_at,
+                 PRIMARY KEY (src_id, dst_id, link_type))
+
+<span class="c">-- GOVERNANCE</span>
+model_version   (id PK, name, trained_at, dataset_hash, metrics jsonb,
+                 <b>gazetteer_version, tolerance_policy_version</b>, thresholds jsonb)
+audit_log       (seq bigserial PK, ts, actor, actor_role, action,
+                 entity_type, entity_id, before jsonb, after jsonb,
+                 model_version, ai_confidence, ai_explanation jsonb,
+                 request_id, <b>prev_hash</b> bytea, <b>row_hash</b> bytea NOT NULL)
+app_user        (id, email, name, cpse_id, role, password_hash, disabled)
+</pre>
+
+  <h4>Indexing</h4>
+  <div class="tw"><table>
+    <thead><tr><th>Index</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>HNSW (embedding halfvec_cosine_ops) m=16</code></td><td>Dense retrieval. <code>halfvec</code> halves memory at negligible quality cost.</td></tr>
+      <tr><td><code>GIN (tsv)</code> + <code>GIN (canonical_text gin_trgm_ops)</code></td><td>Lexical channel and typo robustness.</td></tr>
+      <tr><td><code>btree (spec_key)</code></td><td>Exact canonical-spec-key lookup — the third retrieval channel.</td></tr>
+      <tr><td><code>btree (mpn_norm)</code>, <code>btree (drawing_no, drawing_rev)</code></td><td>The reference matcher.</td></tr>
+      <tr><td><code>GIN (attributes jsonb_path_ops)</code></td><td>Attribute filtering. Promote gated numerics to real typed columns — JSONB is for the long tail, not for the fields the veto reads.</td></tr>
+      <tr><td>RLS policy on <code>cpse_id</code></td><td>Tenant isolation as database policy, not application <code>WHERE</code> clauses.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>Scale arithmetic</h4>
+  <div class="tw"><table>
+    <thead><tr><th class="tight">Records</th><th class="tight">Vectors (halfvec 768)</th><th class="tight">+HNSW</th><th>What breaks first</th></tr></thead>
+    <tbody>
+      <tr><td class="num">10,000</td><td class="num">15 MB</td><td class="num">~19 MB</td><td>Nothing. Fits in L3 arguments.</td></tr>
+      <tr><td class="num">100,000</td><td class="num">154 MB</td><td class="num">~190 MB</td><td>Nothing. <strong>This is your demo corpus.</strong></td></tr>
+      <tr><td class="num">1,000,000</td><td class="num">1.54 GB</td><td class="num">~1.9 GB</td><td>Batch cross-encoder time. Index build ~10–20 min.</td></tr>
+      <tr><td class="num">10,000,000</td><td class="num">15.4 GB</td><td class="num">~19 GB</td><td>Single-node RAM. Switch to binary quantisation + full-precision rescore (~32× reduction, recall recoverable) — <em>not</em> IVF-PQ, whose recall saturates at 85–90%, which is disqualifying for a blocker.</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Report what you measured, architect for the rest.</strong> Say: "benchmarked at 100k on a laptop; the ANN index, blocking strategy and batching are unchanged to 5M on a single node; here is the costed extrapolation." Do not build for millions.</p>
+</section>
+
+<!-- ============ H ============ -->
+<section id="h">
+  <div class="shead"><span class="mark">H</span><h2>Platform architecture &amp; screens</h2></div>
+
+  <p class="lead">Nine screens, not twenty. Three of them decide whether you win; the rest are supporting cast and should be built to a lower standard on purpose.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th class="tight">#</th><th>Screen</th><th>Primary role</th><th class="tight">Priority</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td><strong>Harmonization Workspace</strong> — the reviewer's cockpit</td><td>Reviewer</td><td><span class="b b-v">MUST · flagship</span></td></tr>
+      <tr><td class="num">2</td><td><strong>Evidence panel</strong> — attribute comparison + veto trace</td><td>Reviewer, Auditor</td><td><span class="b b-v">MUST · flagship</span></td></tr>
+      <tr><td class="num">3</td><td><strong>Ingestion &amp; data-quality report</strong></td><td>CPSE admin</td><td><span class="b b-v">MUST · flagship</span></td></tr>
+      <tr><td class="num">4</td><td>Material master — search &amp; detail</td><td>All</td><td><span class="b b-v">MUST</span></td></tr>
+      <tr><td class="num">5</td><td>Canonical material detail — mappings, lineage, history</td><td>All</td><td><span class="b b-v">MUST</span></td></tr>
+      <tr><td class="num">6</td><td>Dashboard — programme-level</td><td>Central admin</td><td><span class="b b-v">MUST</span></td></tr>
+      <tr><td class="num">7</td><td>Audit trail + chain verification</td><td>Auditor</td><td><span class="b b-v">MUST</span></td></tr>
+      <tr><td class="num">8</td><td>Check-before-create (mock ERP)</td><td>Demo</td><td><span class="b b-j">SHOULD</span></td></tr>
+      <tr><td class="num">9</td><td>CPSE dashboard — per-organisation</td><td>CPSE admin</td><td><span class="b b-j">SHOULD</span></td></tr>
+      <tr><td class="num">10</td><td>Dictionary admin — item names, attributes, abbreviations</td><td>Central admin</td><td><span class="b b-u">NICE</span></td></tr>
+      <tr><td class="num">11</td><td>Relationship graph (ego view, ≤300 nodes)</td><td>All</td><td><span class="b b-u">NICE</span></td></tr>
+      <tr><td class="num">—</td><td>Notifications centre · procurement intelligence · supplier graph · 6-role admin UI</td><td>—</td><td><span class="b b-x">DO NOT BUILD</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>1 · The Harmonization Workspace</h3>
+  <p>This screen is the product. Everything else is context around it.</p>
+  <pre>┌──────────────────────────────────────────────────────────────────────┐
+│ QUEUE            │ SOURCE MATERIAL          │ CANDIDATES             │
+│ ───────────      │ ───────────────          │ ──────────             │
+│ ▸ conf band      │ ONGC · MAT-78291         │ ① NMC-00018426  0.972  │
+│ ▸ category       │ SS HEX BOLT M10 X 50     │   ✓ all critical agree │
+│ ▸ CPSE           │                          │ ② NMC-00019213  0.883  │
+│ ▸ 12,482 pending │ extracted:               │   ⚠ grade unknown      │
+│                  │  name  BOLT, HEX HEAD    │ ③ NMC-00021770  0.000  │
+│ [1] approve      │  mat   SS316    <b>CRITICAL</b>│   ✗ VETO: length       │
+│ [2] reject       │  thrd  10.0 mm  <b>CRITICAL</b>│                        │
+│ [3] distinct     │  len   50.0 mm  <b>CRITICAL</b>│ ── evidence ────────── │
+│ [4] escalate     │  head  HEXAGONAL         │ [attribute table here] │
+│ [j/k] next/prev  │                          │                        │
+│                  │ provenance: SYNTHETIC    │ [approve] [reject] …   │
+│                  │ src: tender BHEL-2024-19 │                        │
+└──────────────────────────────────────────────────────────────────────┘</pre>
+
+  <div class="call">
+    <div class="ct">Reviewer throughput is a genuine differentiator</div>
+    <p>A real reviewer must process hundreds of decisions per hour. Every competing demo will review one item at a time with a mouse. Design for volume and say why:</p>
+    <ul>
+      <li><strong>Keyboard-driven review</strong> — <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd>/<kbd>4</kbd> to decide, <kbd>j</kbd>/<kbd>k</kbd> to move, <kbd>u</kbd> to undo. No mouse in the happy path.</li>
+      <li><strong>Bulk-approve above a confidence threshold, with mandatory sampling audit</strong> — approve 2,000 pairs at ≥0.99, and the system forces you to review a random 2% sample first and reports the observed error rate.</li>
+      <li><strong>Queue prioritisation</strong> — by confidence band, by category fragmentation, by number of CPSEs affected.</li>
+      <li><strong>Undo</strong> everywhere, because a reviewer moving at speed will misfire.</li>
+    </ul>
+    <p>Then put the number on a slide: <em>"a reviewer clears N decisions per hour at a measured error rate of X%."</em> That is a product metric, not a model metric, and it is what a buyer procures.</p>
+  </div>
+
+  <h3>2 · The evidence panel</h3>
+  <p>Not "MATCH = 97.4%". A computed table: attribute, source value, candidate value, verdict, plus the raw and canonicalised forms, the extraction provenance for each value, and — when the veto fires — the attribute that fired it stated in plain language. The score is the <em>last</em> row, not the headline.</p>
+  <p><strong>Hard rule:</strong> every number in this panel comes from computation. An LLM may rephrase the table into prose displayed <em>beside</em> it; it may never produce a number. A judge who probes this will find the boundary holds.</p>
+
+  <h3>3 · Ingestion &amp; data quality</h3>
+  <p>Upload → validate → column mapping (the user maps <em>their</em> columns to the canonical schema; this is a real UI contract, not an assumption) → quality scoring → normalise → extract → embed → index → match → queue. Live progress over Server-Sent Events, driven by the <code>ingest_batch.stats</code> JSONB the worker updates.</p>
+  <p>The data-quality report is a genuinely persuasive artefact and costs little: records processed, valid, missing descriptions, description shorter than N chars, invalid or unmapped units, unmapped categories, no extractable critical attribute, duplicate source codes within the file, and — the one that lands — <strong>estimated internal duplicate rate within this single CPSE before any cross-CPSE matching</strong>.</p>
+
+  <h3>Visual design direction</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Aspect</th><th>Direction</th></tr></thead>
+    <tbody>
+      <tr><td>Density</td><td>Information-dense, compact rows, tabular numerics. This is an operator tool, not a marketing page. Virtualise any list over ~200 rows.</td></tr>
+      <tr><td>Confidence encoding</td><td><strong>Never colour alone.</strong> Band label + numeral + shape. Reviewers may be colour-blind and the decision is consequential.</td></tr>
+      <tr><td>Veto state</td><td>A distinct visual treatment from "low confidence" — they are categorically different outcomes and must never look similar.</td></tr>
+      <tr><td>Demo-data labelling</td><td>Persistent, non-apologetic chrome badge: <em>"Demonstration dataset — synthetic CPSE surface forms over real DLA/FLIS catalogue identities."</em> Plus per-record provenance on the detail page. A judge <em>will</em> click in.</td></tr>
+      <tr><td>Accessibility</td><td>WCAG 2.1 AA, full keyboard operation, visible focus. Note GIGW (Guidelines for Indian Government Websites) as the applicable government standard — <span class="b b-u">verify current version</span>.</td></tr>
+      <tr><td>Motion</td><td>Minimal. Progress and state transitions only. Flashy animation reads as a student project to an enterprise buyer.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ I ============ -->
+<section id="i">
+  <div class="shead"><span class="mark">I</span><h2>UX flows</h2></div>
+
+  <div class="tw"><table>
+    <thead><tr><th>Flow</th><th>Steps</th></tr></thead>
+    <tbody>
+      <tr><td><strong>CPSE onboarding</strong></td><td>Admin creates org → uploads extract → maps columns to canonical schema → sees quality report → confirms → batch runs → review queue populates. <em>Calibration wizard</em>: label 200 pairs, thresholds tune to this CPSE's naming conventions.</td></tr>
+      <tr><td><strong>Bulk harmonisation</strong></td><td>Reviewer opens queue filtered to a confidence band → keyboard-decides through candidates → bulk-approves a high-confidence block after a forced sample audit → queue drains → progress reflected on both dashboards.</td></tr>
+      <tr><td><strong>Prevention (check-before-create)</strong></td><td>Storekeeper types a new description in the mock ERP → platform returns "possible existing material NMC-00018426, 0.94" with the evidence table → user adopts the existing NMC instead of minting a new code. <strong>This is the flow that reframes the product from cleanup to governance.</strong></td></tr>
+      <tr><td><strong>Search</strong></td><td>Single box, four channels behind it: exact code, lexical, semantic, spec-aware. Typing <code>stainless bolt 10 50</code> parses into <code>{material: SS, name: BOLT, dia: 10, len: 50}</code> and searches structurally — that is the demo, and it works because you extracted attributes.</td></tr>
+      <tr><td><strong>Dispute &amp; unmap</strong></td><td>CPSE admin opens a mapping → disputes with a reason → mapping moves to <code>disputed</code>, is excluded from analytics, and routes to central admin → resolved by unmapping (superseded, not deleted) or by rejecting the dispute. Fully audited.</td></tr>
+      <tr><td><strong>Audit trace</strong></td><td>Auditor searches by material or date → sees every decision with model version, gazetteer version, tolerance-policy version, the feature values, the reviewer, and the before/after state → runs chain verification → "12,481 entries verified, chain intact."</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ J ============ -->
+<section id="j">
+  <div class="shead"><span class="mark">J</span><h2>Enterprise integration</h2></div>
+
+  <div class="call warn">
+    <div class="ct">Do not attempt real SAP integration</div>
+    <p>You have no SAP system, no licence, and no time. What you deliver is <strong>a documented integration contract plus a working mock</strong> — and you say so plainly: <em>"Integration-ready, not integrated. Here is the contract, here is a working mock, a real connector is a post-prototype engagement."</em> Honest and unattackable. Claiming more invites one question you cannot answer.</p>
+  </div>
+
+  <div class="tw"><table>
+    <thead><tr><th>Surface</th><th>Mechanism</th><th class="tight">Build?</th></tr></thead>
+    <tbody>
+      <tr><td>Inbound extract</td><td>SAP: <code>MARA + MAKT + MARC + MARM</code> join, or an LTMC/LSMW-style flat file. Oracle: <code>MTL_SYSTEM_ITEMS_B + _TL</code>. Two mapping profiles plus generic CSV.</td><td><span class="b b-v">BUILD</span></td></tr>
+      <tr><td>Synchronous existence check</td><td>REST/OData <code>POST /v1/match/preview</code> called at material-creation time. This is the hook for continuous harmonisation.</td><td><span class="b b-v">BUILD</span></td></tr>
+      <tr><td>Outbound mapping feed</td><td>Batch file: CPSE code → NMC ID, for write-back to <code>MARA-BISMT</code> or a custom Z-field.</td><td><span class="b b-v">BUILD</span></td></tr>
+      <tr><td>Attribute write-back</td><td>SAP Classification (<code>CLASS/CABN/AUSP</code>) load — the credible "we enrich your master" story, since Classification is exactly SAP's native attribute mechanism and is patchily populated in brownfield systems.</td><td><span class="b b-j">DESIGN</span></td></tr>
+      <tr><td>Classical async</td><td><code>MATMAS</code> IDoc — name it to show you know the landscape. <span class="b b-u">Verify naming on help.sap.com before saying it aloud.</span></td><td><span class="b b-m">MENTION</span></td></tr>
+      <tr><td>Creation-time interception</td><td>A BAdI/enhancement or an SAP MDG workflow step. Describe the pattern; do not claim to have built it.</td><td><span class="b b-m">MENTION</span></td></tr>
+      <tr><td>Anti-corruption layer</td><td>Staging tables + idempotency keys + explicit conflict and retry semantics, so a partner ERP's schema never leaks into your core model.</td><td><span class="b b-v">BUILD</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <p><strong>The mock ERP is worth more than a real connector would be.</strong> A tiny "CPSE-D SAP" screen that posts a new material and receives back a duplicate warning <em>shows</em> integration in ten seconds, on stage, with zero dependencies. A real connector would be invisible.</p>
+
+  <h4>Positioning against GeM</h4>
+  <p>GeM standardises what CPSEs <em>buy on GeM</em>. It does nothing for the tens of millions of legacy records inside CPSE ERPs, and nothing for cross-CPSE identity. You standardise the master, and can emit GeM-category-shaped output so a harmonised material is GeM-ready. Non-overlapping, defensible, and it lands with a MoP&amp;NG panel.</p>
+</section>
+
+<!-- ============ K ============ -->
+<section id="k">
+  <div class="shead"><span class="mark">K</span><h2>Security, governance &amp; audit</h2></div>
+
+  <h3>Build now vs document only</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Control</th><th class="tight">Status</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Auth — PyJWT + argon2, httpOnly cookie</td><td><span class="b b-v">BUILD</span></td><td>Not python-jose. Not Keycloak — a whole identity server for three roles is a week you do not have.</td></tr>
+      <tr><td>RBAC — <strong>three</strong> roles</td><td><span class="b b-v">BUILD</span></td><td><code>central_admin</code> mints and approves NMC · <code>cpse_reviewer</code> approves mappings for own CPSE · <code>viewer</code>. Auditor = viewer + audit page. Six roles is scope theatre.</td></tr>
+      <tr><td>Tenant isolation — Postgres RLS</td><td><span class="b b-v">BUILD</span></td><td>Policy in the database with <code>SET LOCAL</code> per request transaction, not <code>WHERE</code> clauses an engineer can forget.</td></tr>
+      <tr><td>Append-only audit — <code>REVOKE UPDATE, DELETE</code> + trigger</td><td><span class="b b-v">BUILD</span></td><td><strong>The GRANT is the control, not the hash.</strong> Ten minutes, high value.</td></tr>
+      <tr><td>Hash chaining + <code>/audit/verify</code></td><td><span class="b b-v">BUILD</span></td><td>~30 lines. A chain-verification run is a genuinely good 15 seconds of demo.</td></tr>
+      <tr><td>Secure upload — type sniffing, size caps, archive-bomb guard</td><td><span class="b b-v">BUILD</span></td><td>Plus <strong>CSV/formula injection</strong> protection on export — prefix <code>= + - @</code> in any cell written to CSV/XLSX. Commonly missed, and it is a real vulnerability in a tool whose whole job is importing and exporting spreadsheets.</td></tr>
+      <tr><td>Model governance — version registry</td><td><span class="b b-v">BUILD</span></td><td>Every decision links to model version, gazetteer version, tolerance-policy version, thresholds and feature values.</td></tr>
+      <tr><td>Malware scanning, rate limiting, secrets manager, WAF, SSO</td><td><span class="b b-m">DOCUMENT</span></td><td>Real controls, wrong week. Name them in the architecture with the intended product; implement none.</td></tr>
+      <tr><td>Blockchain audit</td><td><span class="b b-x">REFUSE</span></td><td>See below.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The blockchain question — you asked, here is the straight answer</h3>
+  <div class="call stop">
+    <div class="ct">No. And the refusal is worth more than the implementation.</div>
+    <p>A blockchain solves <strong>Byzantine agreement among mutually distrusting parties with no common authority</strong>. CPSEs are all under a common ministry. There <em>is</em> a trusted authority. The problem the technology solves does not exist here. A permissioned chain run by one operator is a hash-chained append-only log with extra containers and a consensus protocol you do not need.</p>
+    <p>It costs weeks and a new class of demo-day failure. It buys one slide bullet. And it is a <em>liability</em>: when a strong judge asks "what is your consensus mechanism and who are the validators?", the honest answer exposes it as decorative.</p>
+    <p><strong>Raise and dismiss it yourself, on a slide:</strong> <em>"We evaluated blockchain for audit integrity and rejected it. CPSEs share a trust anchor, so Byzantine consensus is unnecessary. We implement hash-chained append-only audit with external anchoring — equivalent tamper-evidence at a fraction of the operational cost."</em> That slide will impress a serious judge more than an actual blockchain would, because it demonstrates engineering judgment, which is the rarest thing in the room.</p>
+  </div>
+
+  <div class="call">
+    <div class="ct">Be precise about what hash chaining proves</div>
+    <p>It gives tamper-evidence against a party who can modify rows but cannot recompute and republish the whole chain. <strong>An attacker with full database write access can rewrite every subsequent hash.</strong> The chain becomes meaningful only when the head hash is periodically <em>anchored</em> somewhere the DBA does not control — a daily signed compliance report, an email to an auditor, or WORM object storage. Recommend: hash chain + daily signed anchor. State the limitation before a judge finds it.</p>
+  </div>
+
+  <h3>Indian regulatory context — what actually binds</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Regime</th><th>Applies?</th><th>Precisely how</th></tr></thead>
+    <tbody>
+      <tr><td><strong>DPDP Act 2023</strong></td><td>Partially</td><td>It governs <em>personal</em> data. Material codes are not personal data. But <strong>user accounts, reviewer identities and the audit trail's actor field are</strong>. Scope your compliance claim to that and you are precise rather than hand-waving.</td></tr>
+      <tr><td><strong>CERT-In directions</strong></td><td>Likely</td><td>Log retention and incident-reporting timelines. <span class="b b-u">Verify the current text before quoting a number.</span></td></tr>
+      <tr><td><strong>MeitY empanelment / MeghRaj</strong></td><td>At deployment</td><td>Relevant to where a production instance may be hosted. Note it; do not claim compliance.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Sovereignty — a real competitive advantage</h3>
+  <p>Every model in the recommended stack is self-hosted and permissively licensed: <code>bge-base-en-v1.5</code> is MIT; the cross-encoder is small and local; the optional narration model runs quantised on-premise. There is <strong>no external API call at inference time, ever</strong>. The answer to "does CPSE procurement data leave the organisation's boundary?" is <em>no</em> — which commercial SaaS MDM competitors cannot say, and which for a government buyer is worth more than a few points of accuracy.</p>
+  <p>This is why <code>jina-embeddings-v3</code> is excluded despite being technically interesting: its weights are <strong>CC-BY-NC-4.0, non-commercial</strong>. "We built national procurement infrastructure on non-commercially-licensed weights" is exactly the question a sharp judge asks and you cannot answer.</p>
+</section>
+
+<!-- ============ L ============ -->
+<section id="l">
+  <div class="shead"><span class="mark">L</span><h2>Evaluation strategy</h2></div>
+
+  <p class="lead">This is what converts "we built an AI" into "we proved it works" — and it is the cheapest credibility in the entire project. One day of benchmark work buys more than any UI feature.</p>
+
+  <h3>Metrics, and which ones are honest</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Metric</th><th>What it measures here</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Pair completeness / recall@k</strong></td><td>Fraction of true matches surviving candidate generation. <strong>This caps everything downstream</strong> and almost no student project measures it. "99.4% pair completeness at 42 candidates per record" is worth more than any F1.</td></tr>
+      <tr><td>Pairwise precision / recall / F1</td><td>The standard headline. <em>Flatters a deduplication system.</em></td></tr>
+      <tr><td><strong>B-cubed P/R/F1, adjusted Rand index</strong></td><td>Cluster-level quality of the resulting master. <strong>These are the honest ones</strong> — the output is a clustering, not a set of independent pair judgments. Report both and explain the difference.</td></tr>
+      <tr><td>ECE, MCE, Brier, reliability diagram</td><td>Whether "0.97" means 97%.</td></tr>
+      <tr><td><strong>Risk–coverage curve</strong></td><td>Precision at each coverage level. The product metric.</td></tr>
+      <tr><td>Per-attribute extraction P/R/F1</td><td>Measured on ~500 hand-labelled descriptions. Turns error analysis from guessing into engineering.</td></tr>
+      <tr><td>Latency: embed throughput, retrieval p50/p95, end-to-end match</td><td>Measured on the actual demo laptop, not quoted from a blog.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call stop">
+    <div class="ct">The base-rate trap — the fastest way to a fake number</div>
+    <p>In a real corpus, duplicates are <em>rare</em>. A test set balanced 50/50 will wildly overstate precision, because precision depends on prevalence. If you report 0.96 precision on a balanced set and the true duplicate rate is 2%, your production precision could be under 0.4.</p>
+    <p><strong>Report precision at realistic prevalence</strong>, log the prevalence of every set you evaluate on, and show the two numbers side by side. A judge who knows statistics will ask; a judge who does not will still be impressed that you volunteered it.</p>
+  </div>
+
+  <h3>The asymmetric cost argument</h3>
+  <div class="call">
+    <div class="ct">Deliver this argument well and it outweighs any dashboard</div>
+    <p>Wrongly merging two different materials in a procurement system can cause the wrong part to be issued to a live refinery — a safety and operational event. Wrongly failing to merge costs some inefficiency and a reviewer's time. <strong>These costs are not symmetric, so F1 — which weights precision and recall equally — is the wrong objective.</strong></p>
+    <p>Use <strong>F-beta with β &lt; 1</strong> (β = 0.5 weights precision twice as heavily), or an explicit cost matrix. State the operating point: <em>target ≥99% precision on auto-approved merges, accept whatever recall follows, and route the remainder to human review.</em> Then report the coverage that policy achieves.</p>
+  </div>
+
+  <h3>Baselines — implemented fairly, or the comparison is worthless</h3>
+  <p>A strawman baseline is dishonest and a sharp judge will spot it. <strong>Tune every baseline's threshold on validation, not test, and say so explicitly.</strong></p>
+  <div class="tw"><table>
+    <thead><tr><th class="tight">#</th><th>Baseline</th><th>Why it is in the table</th></tr></thead>
+    <tbody>
+      <tr><td class="num">B1</td><td>Exact string match after trivial cleaning</td><td>The status quo in most ERPs</td></tr>
+      <tr><td class="num">B2</td><td>Normalised exact match (case, punctuation, whitespace)</td><td>Shows how far pure normalisation gets</td></tr>
+      <tr><td class="num">B3</td><td>TF-IDF trigram cosine + RapidFuzz <code>token_set_ratio</code>, tuned threshold</td><td>The strong classical baseline you must beat honestly</td></tr>
+      <tr><td class="num">B4</td><td>BM25 retrieval + threshold</td><td>Isolates the lexical channel</td></tr>
+      <tr><td class="num">B5</td><td>Off-the-shelf embedding cosine, tuned threshold</td><td><strong>The "just use embeddings" submission every other team builds</strong></td></tr>
+      <tr><td class="num">B6</td><td>Embeddings + naive attribute overlap</td><td>Isolates the value of the veto specifically</td></tr>
+      <tr><td class="num">B7</td><td><strong>LLM-only matcher</strong> — prompt a model with both records</td><td>Include deliberately. Showing a pure-LLM approach is slower, costlier, uncalibrated <em>and not more accurate</em> is a powerful, honest result — and it pre-empts "why didn't you just use GPT?"</td></tr>
+      <tr><td class="num">B8</td><td>Full hybrid system</td><td>Yours</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Ablations — each one teaches the audience something</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Remove</th><th>Expected effect</th><th>What it would mean if the result flipped</th></tr></thead>
+    <tbody>
+      <tr><td>The attribute veto</td><td>Precision collapses on hard negatives; overall F1 barely moves</td><td>Your hard-negative slice is too easy — rebuild it</td></tr>
+      <tr><td>Constructed hard negatives from training</td><td>Hard-slice performance drops sharply</td><td>The model learned identity from text alone; suspicious, check for leakage</td></tr>
+      <tr><td>The cross-encoder</td><td>Small drop (single digits)</td><td>If large, your feature engineering is under-built</td></tr>
+      <tr><td>Lexical channel from retrieval</td><td>Recall@50 drops on alphanumeric-heavy categories</td><td>If no drop, dense is handling part codes better than expected — report it</td></tr>
+      <tr><td><strong>Entity-level → pair-level split</strong></td><td><strong>F1 jumps substantially</strong></td><td>Run this deliberately and show it. It demonstrates you know why your honest number is lower than someone else's dishonest one.</td></tr>
+      <tr><td>Fine-tuned → off-the-shelf embeddings</td><td>Moderate recall drop</td><td>If negligible, say so and save the GPU story</td></tr>
+      <tr><td>Transformer → static embeddings</td><td>Recall drop vs ~100× speedup</td><td>Either result is a good slide</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Results template — fill with measured numbers only</h3>
+  <div class="tw"><table>
+    <thead><tr><th>System</th><th class="tight">Test B (real)</th><th class="tight">Test C (Indian)</th><th class="tight">Hard slice</th><th class="tight">Cluster F1</th><th class="tight">ECE</th></tr></thead>
+    <tbody>
+      <tr><td>B1 exact</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">n/a</td></tr>
+      <tr><td>B3 fuzzy</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">n/a</td></tr>
+      <tr><td>B5 embeddings</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td>B7 LLM-only</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td><strong>B8 ours</strong></td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+    </tbody>
+  </table></div>
+  <p class="lead" style="font-size:14px">Every cell unfilled until an experiment produces it. Bootstrap confidence intervals on the test set, multiple seeds, and a reproducibility protocol (seed, data snapshot hash, model version) recorded per run.</p>
+
+  <h3>Sentences you may say, and sentences you may not</h3>
+  <div class="tw"><table>
+    <thead><tr><th class="tight">✓ Say</th><th class="tight">✗ Never say</th></tr></thead>
+    <tbody>
+      <tr><td>"Trained on 87,000 labelled pairs derived from real DLA catalogue relations; architected and benchmarked to 5M records on a single node."</td><td>"Trained on millions of material records."</td></tr>
+      <tr><td>"At our auto-approve threshold, precision is ≥99% with 95% confidence over n=4,102 pairs, covering 68% of true duplicates."</td><td>"Our AI is 97% accurate."</td></tr>
+      <tr><td>"On real catalogue pairs we score X; on real Indian tender lines we score Y, which is lower, and here is why."</td><td>A single blended headline number.</td></tr>
+      <tr><td>"Duplicate rate measured on our demonstration corpus, which is labelled synthetic-over-real."</td><td>"Indian CPSEs have a 15% duplicate rate." <em>(vendor marketing, not measured)</em></td></tr>
+      <tr><td>"Potential aggregation opportunity: N CPSEs hold this material."</td><td>"₹X crore in savings."</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Hostile questions, with answers ready</h3>
+  <div class="q"><div class="q-q">Isn't this just embeddings with extra steps?</div><div class="q-a"><p>No — and here is the ablation that proves it. Remove the attribute veto and precision on our hard slice falls from A to B while overall F1 barely moves, because hard negatives are rare in a random sample and dominant in production. Embeddings decide <em>candidacy</em>. Structure decides <em>identity</em>. Here is a pair with 0.98 cosine similarity that we reject.</p></div></div>
+  <div class="q"><div class="q-q">Where did your labels come from?</div><div class="q-a"><p>From <code>V_FLIS_PART</code> — many manufacturer part numbers recorded against one canonical stock number by a national codification authority — and from <code>V_FLIS_STANDARDIZATION</code>, which records actual human standardization decisions. We did not assert a single label ourselves, and we did not use an LLM to generate any.</p></div></div>
+  <div class="q"><div class="q-q">Your training data is synthetic. Doesn't that make the results meaningless?</div><div class="q-a"><p>The <em>identities</em> are real; only the surface text is synthetic. We separate them in reporting: Test B is 100% real with zero synthesis, Test C is real Indian tender lines we collected by hand, Test D is four published academic benchmarks with other people's numbers to compare against. Our headline is the real number, not the synthetic one.</p></div></div>
+  <div class="q"><div class="q-q">Verdantis and Prospecta already sell this. Why you?</div><div class="q-a"><p>We do not claim to beat them on matching quality — we cannot measure that and it is probably false; their moat is a proprietary OEM part reference database. We do something they do not: mint a <em>shared national identity across independently governed enterprises</em> with a central adjudicating authority and per-CPSE sovereignty over existing codes. Every commercial tool cleanses one enterprise's master. Ours is cross-organisational, licence-clean, self-hostable and air-gap capable.</p></div></div>
+  <div class="q"><div class="q-q">Why not just use ChatGPT to compare the two descriptions?</div><div class="q-a"><p>We benchmarked it — baseline B7. It is slower, uncalibrated, non-reproducible across runs, and it has the <em>same</em> numeric weakness with more convincing prose. A government audit trail must give the same answer in 2029 as in 2026. And at 1M records × 20 candidates that is 20M calls per pass, which is not a national-scale architecture at any price.</p></div></div>
+  <div class="q"><div class="q-q">What about valves, motors, instruments — not just bolts?</div><div class="q-a"><p>Six commodity families of graded difficulty, and we will demo two live. Fasteners establish the mechanism; valves show multi-attribute high-consequence matching; bearings show reference-method matching where descriptions share almost no words.</p></div></div>
+  <div class="q"><div class="q-q">Can the AI decide two materials are interchangeable?</div><div class="q-a"><p>Deliberately not. In refining, interchangeability has statutory consequences — pressure class, NACE certification for sour service, hazardous-area certification. The system records expert-asserted equivalences and surfaces candidates, but it will not auto-approve one at any confidence level. We will show you it refusing.</p></div></div>
+  <div class="q"><div class="q-q">How do we know you didn't leak test data into training?</div><div class="q-a"><p>Splits are entity-level, not pair-level — no canonical material appears on both sides. We also ran the pair-level split deliberately as an ablation so we could measure the inflation it causes: it moves F1 by Δ, which is why our number is lower than it could have been.</p></div></div>
+</section>
+
+<!-- ============ M ============ -->
+<section id="m">
+  <div class="shead"><span class="mark">M</span><h2>Demo strategy</h2></div>
+
+  <div class="call stop">
+    <div class="ct">The highest-priority change to your demo plan</div>
+    <p>Your §30 has you upload three CPSE datasets live and find thousands of duplicates on stage. The arithmetic: embedding 100k strings takes 40–330 s, candidate retrieval for 100k sources takes minutes to tens of minutes, and cross-encoding 25 candidates each is <strong>hours on CPU</strong>.</p>
+    <p><strong>Pre-ingest the baseline corpus. Live-upload a 500–2,000 row delta.</strong> That runs in 10–40 seconds — long enough for the progress UI to look real, short enough that you are not standing in silence. And say it out loud: <em>"The 240,000-record baseline was ingested overnight, as it would be in production. What you're watching is the incremental daily flow — the actual steady-state workload."</em> That framing is <em>more</em> credible than pretending a national dataset loads in 30 seconds, and it pre-empts the judge who was about to ask.</p>
+  </div>
+
+  <h3>The nine-minute run</h3>
+  <div class="tw"><table>
+    <thead><tr><th class="tight">#</th><th>Beat</th><th class="tight">Time</th><th>Point being made</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Dashboard, pre-loaded. Three CPSEs, 240k materials, harmonisation at 61%.</td><td class="num">0:30</td><td>This is a system, not a script. Note the demo-data badge unprompted.</td></tr>
+      <tr><td class="num">2</td><td>Upload CPSE-D's quarterly delta (1,200 rows). Quality report streams in.</td><td class="num">1:00</td><td>Real ingestion, real validation, honest statistics — including 41 records with no extractable critical attribute.</td></tr>
+      <tr><td class="num">3</td><td>Open the workspace. Source: <code>SS HEX BOLT M10 X 50</code>.</td><td class="num">0:30</td><td>The reviewer's actual job.</td></tr>
+      <tr><td class="num">4</td><td><strong>Candidate 1 matches</strong> across totally different wording. Show the attribute table.</td><td class="num">1:00</td><td>Evidence, not a percentage. Point at the inferred-unit provenance line.</td></tr>
+      <tr><td class="num">5</td><td><strong>Candidate 3: M10×75. Cosine 0.981. REJECTED on length.</strong></td><td class="num">1:30</td><td><strong>The moment the demo is built around.</strong> Say the number out loud: "the text similarity was higher than for the match we accepted, and it did not matter."</td></tr>
+      <tr><td class="num">6</td><td>A bearing duplicate caught by <strong>part number</strong> where descriptions share almost no words.</td><td class="num">1:00</td><td>The reference method. Nobody else will have this.</td></tr>
+      <tr><td class="num">7</td><td>An <strong>equivalence candidate</strong> — and the system refuses to auto-approve it.</td><td class="num">0:45</td><td>Engineering maturity. "The AI is not permitted to make this call."</td></tr>
+      <tr><td class="num">8</td><td>Approve. NMC minted. All four CPSE codes preserved and visible.</td><td class="num">0:30</td><td>Federated identity — nobody loses their codes.</td></tr>
+      <tr><td class="num">9</td><td>Mock SAP screen: type a new material → "possible existing material, 0.94" → adopt it.</td><td class="num">1:00</td><td><strong>Cleanup becomes governance.</strong> The duplicate never enters the master.</td></tr>
+      <tr><td class="num">10</td><td>Audit trail → verify chain → "12,481 entries verified, chain intact."</td><td class="num">0:45</td><td>Government-grade traceability, demonstrated not asserted.</td></tr>
+      <tr><td class="num">11</td><td>The evaluation slide: baselines, ablations, reliability diagram, four test sets.</td><td class="num">1:00</td><td>The AI is real and measured. This is where technical judges are won.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The demo must not depend on a network</h3>
+  <pre><b>PRIMARY — Laptop A, Wi-Fi OFF, on purpose</b>
+  docker compose up          <span class="c">← the entire runbook, on an index card</span>
+    ├── db  : pgvector/pgvector:pg18@sha256:…  (seeded volume, HNSW prebuilt)
+    └── api : FastAPI + worker + <b>ONNX model baked into the image</b>
+              + built React SPA served via StaticFiles
+  Browser → http://localhost:8000
+
+<b>HOT SPARE — Laptop B</b>, byte-identical images and volume, already running,
+              browser already open on the first screen. Swap the HDMI cable.
+
+<b>MIRROR — one always-on VPS</b>, kept warm, used ONLY to answer
+          "is it deployed?" Never the thing on screen.
+
+<b>FLOOR — a 4-minute recorded run with narration</b>, on both laptops and a phone.
+</pre>
+  <ul>
+    <li><strong>Bake model weights into the image</strong>, set <code>HF_HUB_OFFLINE=1</code> and <code>TRANSFORMERS_OFFLINE=1</code>. Test the whole stack with the network physically disconnected — if it works you are done, and if it does not you found your demo-day bug in week 6 instead of on stage.</li>
+    <li><strong>No external assets in the frontend.</strong> Self-host fonts via <code>@fontsource/*</code>. Verify in devtools in airplane mode: zero requests to any host that is not localhost.</li>
+    <li><strong>Pin image digests</strong>, and <code>docker save</code> both images to two USB drives.</li>
+    <li><strong>Rehearse the cold start five times, timed</strong>, including the "it crashed, restart it" path.</li>
+  </ul>
+  <p>Venue Wi-Fi at a hackathon final is a hostile network — captive portals, saturated uplinks, blocked ports. Assume it is unusable and you lose nothing; assume it works and you can lose everything. Free tiers make this worse, not better: Render's free Postgres <strong>expires 30 days after creation</strong>, Neon suspends compute after 5 minutes idle, and HF Spaces now requires a paid plan for Docker Spaces.</p>
+</section>
+
+<!-- ============ N ============ -->
+<section id="n">
+  <div class="shead"><span class="mark">N</span><h2>Innovation — what is actually different</h2></div>
+
+  <p class="lead">Be honest with yourselves about the categories. Most hackathon "innovation" is category B, and that is fine — but knowing which is which is what lets you defend it.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Claim</th><th class="tight">Category</th><th>Defensibility</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Attribute veto making similarity insufficient for identity</strong></td><td><span class="b b-v">A — genuinely novel in framing</span></td><td>The published ER literature does not seriously address engineering tolerances or unit semantics. You cannot copy a solution, so you designed one. <strong>Strongest claim. Lead with it.</strong></td></tr>
+      <tr><td><strong>Cross-organisational federated identity with per-CPSE code sovereignty</strong></td><td><span class="b b-v">A — nobody else does this</span></td><td>Every commercial tool cleanses <em>one</em> enterprise's master. None mints shared identity across independently governed enterprises with a central adjudicator. This is exactly what the PS asks for.</td></tr>
+      <tr><td><strong>Calibrated confidence with principled abstention</strong></td><td><span class="b b-j">A/B</span></td><td>Class-conditional conformal prediction gives a distribution-free guarantee on the abstention rate. ~40 lines of numpy. Vendors sell confidence scores; you sell a guarantee.</td></tr>
+      <tr><td><strong>Dual reference + descriptive matching</strong></td><td><span class="b b-j">B — not novel, but nobody at SIH will do it</span></td><td>Borrowed from NCS. Produces the best demo moment.</td></tr>
+      <tr><td><strong>Evaluation methodology as a differentiator</strong></td><td><span class="b b-j">B — but decisive</span></td><td>Entity-level splits, four separate test sets, published baselines, ablations, reliability diagrams. Against typical hackathon projects this <em>is</em> the differentiator.</td></tr>
+      <tr><td><strong>Decision provenance replayable to the gazetteer version</strong></td><td><span class="b b-j">B</span></td><td>Most teams version only the model. Versioning the rules too is small and lands with an audit-minded judge.</td></tr>
+      <tr><td><strong>Fully offline, licence-clean, air-gap-capable inference</strong></td><td><span class="b b-j">B — real buyer value</span></td><td>A genuine advantage over any SaaS or LLM-API competitor for sensitive procurement data.</td></tr>
+      <tr><td><strong>Prevention at creation time</strong></td><td><span class="b b-j">B</span></td><td>Turns cleanup into governance. Reframes the whole product.</td></tr>
+      <tr><td>"We used AI/embeddings/vector search"</td><td><span class="b b-x">C — sounds novel, is not</span></td><td>A weekend project. Never claim it.</td></tr>
+      <tr><td>"Blockchain-secured audit"</td><td><span class="b b-x">C — negative value</span></td><td>See §K.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call oxide">
+    <div class="ct">What competitors do that you should adopt</div>
+    <p>Verdantis, SPARETECH and Verusen all lean on a <strong>reference database of tens of millions of OEM part records</strong> to match against. That is their real moat and you cannot replicate it — but you can build a small honest version: your FLIS <code>V_FLIS_PART</code> slice <em>is</em> a manufacturer-part reference table. Use it, and say plainly that at production scale this component would be licensed or built out.</p>
+  </div>
+</section>
+
+<!-- ============ O ============ -->
+<section id="o">
+  <div class="shead"><span class="mark">O</span><h2>Risk register</h2></div>
+
+  <div class="tw"><table>
+    <thead><tr><th>Risk</th><th class="tight">Cat</th><th class="tight">L×I</th><th>Early warning</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td><strong>FLIS download blocked from India</strong></td><td class="tight">Data</td><td class="tight"><span class="b b-x">M×H</span></td><td>403 in a real browser, not just curl</td><td><strong>Download in week 1 and archive.</strong> Fallback F2 (BOLTS + UNSPSC + GSA). Assign day one.</td></tr>
+      <tr><td><strong>Extraction coverage &lt;70% on real text</strong></td><td class="tight">ML</td><td class="tight"><span class="b b-x">M×H</span></td><td>Week-2 regex coverage experiment</td><td>This invalidates the whole architecture — <strong>find out in week 1, not week 8.</strong> Fall back to a heavier learned tagger and narrow the commodity slice.</td></tr>
+      <tr><td><strong>Circular evaluation — metrics measure the generator</strong></td><td class="tight">ML</td><td class="tight"><span class="b b-x">H×H</span></td><td>F1 &gt; 0.95 on your own test set</td><td>Generator/evaluator separation (G1 vs G2), entity-level splits, hand-labelled real test set, benchmark suite. <strong>A suspiciously high number is the symptom, not the reward.</strong></td></tr>
+      <tr><td><strong>Veto destroys recall when attributes are missing</strong></td><td class="tight">ML</td><td class="tight"><span class="b b-u">H×M</span></td><td>Recall collapses on sparse categories</td><td>UNKNOWN never vetoes — only DISAGREE does. Route UNKNOWN-on-critical to REVIEW instead. Measure veto-fire rate by category.</td></tr>
+      <tr><td><strong>Scope overrun — nothing finished well</strong></td><td class="tight">Team</td><td class="tight"><span class="b b-x">H×H</span></td><td>Week 4 with no end-to-end path</td><td>Build the thin vertical slice first. Enforce the cut list. Weekly "if not here by now, cut X" rule.</td></tr>
+      <tr><td>Live demo fails on venue network</td><td class="tight">Demo</td><td class="tight"><span class="b b-u">M×H</span></td><td>Any runtime call to a non-localhost host</td><td>Airplane-mode topology, hot spare, recorded video. Rehearse cold start 5×.</td></tr>
+      <tr><td>100k live upload stalls on stage</td><td class="tight">Demo</td><td class="tight"><span class="b b-x">H×M</span></td><td>Never timed it</td><td>Pre-ingest baseline; live-upload a delta; hard cap upload size in the UI.</td></tr>
+      <tr><td>Judge challenges data provenance</td><td class="tight">Present</td><td class="tight"><span class="b b-x">H×H</span></td><td>—</td><td><strong>Volunteer it first.</strong> Per-record provenance visible in the UI. Never claim to hold CPSE material master data.</td></tr>
+      <tr><td>Demo is bolts-only</td><td class="tight">Present</td><td class="tight"><span class="b b-u">M×H</span></td><td>Week 5 with one family built</td><td>Six families in the dictionary; demo two live.</td></tr>
+      <tr><td>Equivalence class attacked on safety grounds</td><td class="tight">Present</td><td class="tight"><span class="b b-u">M×H</span></td><td>—</td><td>Renamed, never auto-approved, refusal demoed on purpose.</td></tr>
+      <tr><td>Cross-encoder too slow for interactive use</td><td class="tight">Tech</td><td class="tight"><span class="b b-u">M×M</span></td><td>Week-2 benchmark</td><td>Cache in <code>match_candidate</code>; pre-warm demo records; shrink to MiniLM-class.</td></tr>
+      <tr><td>Single point of failure — one person owns the ML</td><td class="tight">Team</td><td class="tight"><span class="b b-u">M×H</span></td><td>Only one person can run training</td><td>Pair on the pipeline; notebooks checked in; every artefact reproducible from a script.</td></tr>
+      <tr><td>Frontend/backend integration eats the last two weeks</td><td class="tight">Team</td><td class="tight"><span class="b b-x">H×M</span></td><td>API contract still changing in week 5</td><td>Freeze the API contract in week 3. Generate the TS client from OpenAPI.</td></tr>
+      <tr><td>Idea submission deadline missed</td><td class="tight">Admin</td><td class="tight"><span class="b b-u">L×H</span></td><td>Nobody owns it</td><td><strong>Name one owner today.</strong> 20 Sep 2026 — verify on sih.gov.in.</td></tr>
+      <tr><td>Standardization class has too few real pairs</td><td class="tight">Data</td><td class="tight"><span class="b b-u">M×M</span></td><td><code>RELATED_NSN</code> mostly empty in your slice</td><td>Measure in week 1. If &lt;2,000 pairs, derive the class from attribute rules and <strong>say so openly.</strong></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ P ============ -->
+<section id="p">
+  <div class="shead"><span class="mark">P</span><h2>What NOT to build</h2></div>
+  <p class="lead">This is the most valuable section in the document. Your brief describes roughly three times the problem statement's ask, and shipping the minimum well beats shipping everything badly — hackathon judging rewards depth over breadth, because breadth is indistinguishable from a template.</p>
+
+  <div class="mos">
+    <div class="mos-g must">
+      <h4>Must have — the prototype is not credible without these</h4>
+      <ul>
+        <li>Item-name dictionary + attribute templates, 6 families</li>
+        <li>Abbreviation gazetteer (versioned, reviewable)</li>
+        <li>Attribute extraction cascade</li>
+        <li>Unit canonicalisation via Pint</li>
+        <li>Reference matcher (MPN / drawing no.)</li>
+        <li>Hybrid retrieval + RRF</li>
+        <li>Pairwise scorer + <strong>veto gate</strong></li>
+        <li>Calibration + abstention band</li>
+        <li>Evidence panel (computed)</li>
+        <li>Harmonization workspace, keyboard-driven</li>
+        <li>Ingestion + data-quality report</li>
+        <li>NMC minting + federated mapping (incl. unmap)</li>
+        <li>Append-only hash-chained audit</li>
+        <li>3-role RBAC + RLS</li>
+        <li>Evaluation harness, baselines, ablations</li>
+        <li>Offline docker-compose demo</li>
+      </ul>
+    </div>
+    <div class="mos-g should">
+      <h4>Should have — build if week 6 arrives on schedule</h4>
+      <ul>
+        <li>Check-before-create + mock ERP screen</li>
+        <li>CPSE-level dashboard</li>
+        <li>Transitive duplicate clustering</li>
+        <li>Bulk approve with sampling audit</li>
+        <li>Semantic + spec-aware search UI</li>
+        <li>Calibration wizard at onboarding</li>
+        <li>Merge / split lifecycle UI</li>
+        <li>UNSPSC crosswalk display</li>
+      </ul>
+    </div>
+    <div class="mos-g nice">
+      <h4>Nice to have — only if genuinely ahead</h4>
+      <ul>
+        <li>Dictionary admin UI</li>
+        <li>Ego-graph visualisation (≤300 nodes)</li>
+        <li>SAP Classification write-back file</li>
+        <li>Static-embedding tier</li>
+        <li>Local LLM narration of evidence</li>
+      </ul>
+    </div>
+    <div class="mos-g never">
+      <h4>Do not build — each with the reason</h4>
+      <ul>
+        <li><strong>Supplier / procurement graph</strong> — no supplier data, no legal route to it</li>
+        <li><strong>Graph database</strong> — your graph is a 2–3 hop star</li>
+        <li><strong>Cost-savings analytics</strong> — every number would be fabricated</li>
+        <li><strong>Notifications &amp; alerts</strong> — pure plumbing, zero demo value</li>
+        <li><strong>Six RBAC roles</strong> — three cover it</li>
+        <li><strong>Blockchain audit</strong> — no Byzantine problem to solve</li>
+        <li><strong>Multilingual models</strong> — likely an invented need</li>
+        <li><strong>Malware scanning / rate limiting / secrets manager</strong> — document only</li>
+        <li><strong>Redis</strong> — a third failure mode for no benefit</li>
+        <li><strong>Qdrant / Milvus / Elasticsearch</strong> — pgvector covers your scale</li>
+        <li><strong>Spark</strong> — slower than pandas at your volume</li>
+        <li><strong>Next.js</strong> — no SEO requirement; SPA is lower risk</li>
+        <li><strong>Celery</strong> — you need the job table anyway</li>
+        <li><strong>Separate inference service</strong> — a network hop and a second thing to be down</li>
+        <li><strong>LoRA on a 0.1B model</strong> — pointless below ~1B</li>
+        <li><strong>SPLADE / ColBERT</strong> — cost without benefit here</li>
+        <li><strong>Real ERP connector</strong> — contract + mock instead</li>
+        <li><strong>"Built for millions" as an engineering deliverable</strong> — it is an architecture deliverable</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="call ok">
+    <div class="ct">The minimum credible prototype</div>
+    <p>If everything goes wrong, this is the smallest build that still wins on merit: <strong>ingest → extract → retrieve → veto-scored match → evidence panel → human approve → NMC minted with all source codes preserved → audit entry</strong>, over two commodity families, with the evaluation table filled in from real measurements and the M10×50 / M10×75 moment working.</p>
+    <p>That is roughly 55 person-days. Everything above it is upside. Judges reward a system that does one hard thing convincingly over one that gestures at fifteen.</p>
+  </div>
+</section>
+
+<!-- ============ STACK ============ -->
+<section id="stack">
+  <div class="shead"><span class="mark">1</span><h2>Final recommended stack</h2></div>
+  <p class="lead">One recommendation per layer, not a menu. Optimised for a student team shipping in weeks, a demo that cannot fail, and a credible scaling story.</p>
+
+  <pre>LAYER          CHOICE                                       WHY
+─────────────────────────────────────────────────────────────────────────────────
+Database       <b>PostgreSQL 18</b>                              one source of truth
+Vector         <b>pgvector 0.8</b>, halfvec(768), HNSW m=16      no sync layer, no 2nd store
+Lexical        tsvector/GIN + pg_trgm/GIN                    free, adequate
+Fusion         <b>Reciprocal Rank Fusion, k=60</b>               one hyperparameter, and it's flat
+Attributes     JSONB + <b>promoted typed numeric columns</b>      gated fields must be typed
+Tenancy        <b>RLS</b> + SET LOCAL per request txn             policy, not WHERE clauses
+Backend        <b>FastAPI</b> + SQLAlchemy 2.0 async + Alembic    not SQLModel
+Validation     Pydantic v2                                   separate from ORM models
+Jobs           <b>own job table + FOR UPDATE SKIP LOCKED</b>      you need the table anyway
+Progress       Server-Sent Events                            no WebSocket lifecycle
+Frontend       <b>Vite + React + TypeScript SPA</b>               static build, no Node in prod
+UI kit         shadcn/ui (Radix + Tailwind)                  own the code; a11y free
+Tables         @tanstack/react-table <b>pinned v8</b>             v9 broke the API
+Charts         Recharts                                      sufficient; visx/D3 cut
+Graph          Cytoscape.js, ego view ≤300 nodes             layout precomputed server-side
+ETL            <b>Polars</b> (or pandas+pyarrow) + <b>calamine</b>      Spark permanently cut
+Embedding      <b>bge-base-en-v1.5</b> (MIT), ONNX int8, in-worker  +static-embedding ablation
+Reranker       MiniLM-class cross-encoder, DITTO-serialised  cached in match_candidate
+Units          <b>Pint</b>                                        dimensional analysis for free
+Scorer         Logistic regression → LightGBM if needed      explainable by construction
+Calibration    Temperature → Platt/isotonic → conformal      distribution-free abstention
+Auth           PyJWT + argon2 + httpOnly cookie              not python-jose, not Keycloak
+Audit          append-only + GRANT + hash chain + anchor     <b>not blockchain</b>
+Container      docker compose, 2 services, pinned digests    one-command runbook
+Demo           <b>localhost on Laptop A, Wi-Fi OFF</b>            hot spare + recorded video
+</pre>
+
+  <h4>API surface</h4>
+  <p>REST, not GraphQL — your access patterns are fixed and a schema layer buys nothing here. Versioned under <code>/v1</code>, cursor pagination, idempotency keys on ingestion, RFC 7807 problem+json errors.</p>
+  <pre><b>POST</b>   /v1/ingest/batches                 <span class="c">multipart; returns batch_id (async)</span>
+<b>GET</b>    /v1/ingest/batches/{id}            <span class="c">status + live stats</span>
+<b>GET</b>    /v1/ingest/batches/{id}/events     <span class="c">SSE progress stream</span>
+<b>POST</b>   /v1/match/preview                  <span class="c">SYNC — the check-before-create hook</span>
+<b>GET</b>    /v1/materials/{id}/candidates      <span class="c">ranked, cache-first</span>
+<b>GET</b>    /v1/matches/{src}/{dst}/explanation<span class="c">the evidence object</span>
+<b>POST</b>   /v1/reviews                        <span class="c">approve|reject|distinct|escalate</span>
+<b>POST</b>   /v1/reviews/bulk                   <span class="c">requires sample_audit_token</span>
+<b>POST</b>   /v1/canonical                      <span class="c">mint NMC</span>
+<b>POST</b>   /v1/canonical/{id}/merge|split
+<b>POST</b>   /v1/mappings/{id}/dispute|unmap    <span class="c">the path nobody else builds</span>
+<b>GET</b>    /v1/search?q=&amp;mode=exact|lex|semantic|spec
+<b>GET</b>    /v1/graph/ego/{id}?depth=2&amp;limit=300
+<b>GET</b>    /v1/analytics/{dashboard}
+<b>GET</b>    /v1/audit?entity=&amp;from=&amp;to=  ·  <b>POST</b> /v1/audit/verify
+</pre>
+</section>
+
+<!-- ============ PHASES ============ -->
+<section id="phases">
+  <div class="shead"><span class="mark">2</span><h2>Development phases</h2></div>
+
+  <div class="call warn">
+    <div class="ct">You have two deadlines, not one</div>
+    <p><strong>Idea submission: 20 September 2026 — 25 days away.</strong> That milestone needs the <em>idea</em> and the de-risking evidence, not the build. The national finale is later. Plan Sprint 0 for the submission and the numbered phases for the build, and do not let the two blur.</p>
+  </div>
+
+  <div class="tw"><table>
+    <thead><tr><th class="tight">Phase</th><th>Goal</th><th>Exit criteria — cut scope if not met</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Sprint 0</strong><br><span class="b b-m">now → 20 Sep</span></td><td>De-risk and submit the idea</td><td>FLIS archives downloaded &amp; hashed · regex coverage measured on 500 real descriptions · 300 real tender lines collected · cross-encoder benchmarked on the demo laptop · pair completeness measured · idea submitted</td></tr>
+      <tr><td><strong>Phase 1</strong><br><span class="b b-m">wk 1–2</span></td><td>Canonical layer + extraction</td><td>Dictionary for 2 families live · extraction cascade running with per-attribute metrics · Pint canonicalisation · thin vertical slice: CSV in → canonical record out</td></tr>
+      <tr><td><strong>Phase 2</strong><br><span class="b b-m">wk 3–4</span></td><td>Matching engine + honest evaluation</td><td>Hybrid retrieval with measured recall@k · veto gate working · calibration fitted · <strong>baselines B1–B7 run</strong> · benchmark suite reported · <strong>API contract frozen</strong></td></tr>
+      <tr><td><strong>Phase 3</strong><br><span class="b b-m">wk 5–6</span></td><td>Platform</td><td>Workspace + evidence panel + ingestion + master search + audit, all end-to-end on seeded data · 4 more families in the dictionary</td></tr>
+      <tr><td><strong>Phase 4</strong><br><span class="b b-m">wk 7</span></td><td>Governance &amp; prevention</td><td>Check-before-create + mock ERP · merge/split/unmap · dashboards · chain verification</td></tr>
+      <tr><td><strong>Phase 5</strong><br><span class="b b-m">wk 8</span></td><td>Harden, rehearse, freeze</td><td><strong>Feature freeze at start of week.</strong> Airplane-mode test passes · 5 timed cold starts · video recorded · deck built from measured numbers only</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ EFFORT ============ -->
+<section id="effort">
+  <div class="shead"><span class="mark">3</span><h2>Estimated effort</h2></div>
+
+  <div class="kpis">
+    <div class="kpi alert"><div class="kl">Full brief as written</div><div class="kv">~158 pd</div><div class="kn">person-days</div></div>
+    <div class="kpi"><div class="kl">After the cut list</div><div class="kv">~112 pd</div><div class="kn">recommended scope</div></div>
+    <div class="kpi"><div class="kl">Minimum credible</div><div class="kv">~55 pd</div><div class="kn">floor</div></div>
+    <div class="kpi"><div class="kl">Realistic budget</div><div class="kv">~120 pd</div><div class="kn">5 people × 8 wk × 3 effective d/wk</div></div>
+  </div>
+
+  <div class="tw"><table>
+    <thead><tr><th>Work package</th><th class="tight">Full</th><th class="tight">Cut</th></tr></thead>
+    <tbody>
+      <tr><td>Data acquisition &amp; FLIS corpus build</td><td class="num">8</td><td class="num">8</td></tr>
+      <tr><td><strong>Item-name dictionary + attribute templates (6 families)</strong></td><td class="num">12</td><td class="num">12</td></tr>
+      <tr><td>Normaliser + abbreviation gazetteer</td><td class="num">8</td><td class="num">7</td></tr>
+      <tr><td><strong>Attribute extraction cascade</strong></td><td class="num">12</td><td class="num">12</td></tr>
+      <tr><td>Synthetic surface generator + hard negatives</td><td class="num">8</td><td class="num">7</td></tr>
+      <tr><td>Retrieval: embed, index, hybrid, RRF</td><td class="num">8</td><td class="num">7</td></tr>
+      <tr><td><strong>Scorer + veto + calibration</strong></td><td class="num">12</td><td class="num">12</td></tr>
+      <tr><td>Evaluation harness, baselines, ablations</td><td class="num">10</td><td class="num">10</td></tr>
+      <tr><td>Backend: schema, API, jobs, audit</td><td class="num">15</td><td class="num">13</td></tr>
+      <tr><td>Frontend: all screens</td><td class="num">22</td><td class="num">14</td></tr>
+      <tr><td>Continuous harmonisation + mock ERP</td><td class="num">5</td><td class="num">4</td></tr>
+      <tr><td>Auth / RBAC / RLS</td><td class="num">4</td><td class="num">3</td></tr>
+      <tr><td>Deployment, docker, demo hardening</td><td class="num">6</td><td class="num">6</td></tr>
+      <tr><td>Demo prep, rehearsal, deck, video</td><td class="num">8</td><td class="num">8</td></tr>
+      <tr><td><strong>Integration, debugging, slack</strong> <em>— the line teams forget</em></td><td class="num">20</td><td class="num">18</td></tr>
+      <tr style="background:var(--surface-2)"><td><strong>Total</strong></td><td class="num"><strong>158</strong></td><td class="num"><strong>112</strong></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="call">
+    <div class="ct">Read the overshoot honestly</div>
+    <p>The brief as written is ~1.3× your realistic budget, and that estimate already assumes heavy AI assistance. Be careful about how much you discount for that: AI accelerates code generation, but not debugging, integration, data wrangling, or judgement — and those are where student projects actually lose time. The cut list closes the gap; without it you will arrive at week 8 with fifteen half-built features and no evaluation table.</p>
+    <p><strong>The three work packages in bold are the product.</strong> If you protect nothing else, protect those.</p>
+  </div>
+</section>
+
+<!-- ============ DEPS ============ -->
+<section id="deps">
+  <div class="shead"><span class="mark">4</span><h2>Dependencies</h2></div>
+  <div class="tw"><table>
+    <thead><tr><th>Dependency</th><th class="tight">Criticality</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>DLA PUB LOG archives</td><td><span class="b b-x">CRITICAL</span></td><td>Download week 1. WAF blocks scripted fetches; use a browser.</td></tr>
+      <tr><td><code>bge-base-en-v1.5</code> weights</td><td><span class="b b-x">CRITICAL</span></td><td>MIT. Bake into the image; never fetch at runtime.</td></tr>
+      <tr><td>Demo laptop ×2 + HDMI + 2 USB drives</td><td><span class="b b-x">CRITICAL</span></td><td>Identical images and volumes on both.</td></tr>
+      <tr><td>GPU access (Kaggle preferred over Colab free)</td><td><span class="b b-u">IMPORTANT</span></td><td>Session persistence and weekly quota are friendlier for a shared team job. Verify current quotas.</td></tr>
+      <tr><td>A domain contact who can sanity-check item names</td><td><span class="b b-u">IMPORTANT</span></td><td>Faculty, alum, or family in a CPSE. Would materially raise dictionary quality — and settles the multilingual question.</td></tr>
+      <tr><td>One person-week for manual pair labelling</td><td><span class="b b-x">CRITICAL</span></td><td>Without it you have no honest number, ever. <strong>The most likely thing to get cut and the one you must not cut.</strong></td></tr>
+      <tr><td>BOLTS, UNSPSC (UNGM), GSA extract, WDC/DeepMatcher/PriceRunner</td><td><span class="b b-j">SUPPORTING</span></td><td>All verified downloadable. Mind licences: don't redistribute the UNSPSC XLSX; attribute BOLTS (LGPL-2.1+).</td></tr>
+      <tr><td>Postgres 18 + pgvector image, pinned by digest</td><td><span class="b b-u">IMPORTANT</span></td><td><code>docker save</code> to USB.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ VERIFY ============ -->
+<section id="verify">
+  <div class="shead"><span class="mark">5</span><h2>Verification checklist</h2></div>
+  <p class="lead">Nothing here goes on a slide until someone on the team has opened the source themselves. Every item below is a claim in this document that is <em>unverified or second-hand</em>.</p>
+  <div class="tw"><table>
+    <thead><tr><th class="tight">#</th><th>Claim to verify</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>SIH26099 official text &amp; deadline</td><td>sih.gov.in/sih2026PS — byte-compare. <strong>Before idea submission.</strong></td></tr>
+      <tr><td class="num">2</td><td>Whether the CPSE sample dataset will actually be released</td><td>Ask via the SIH problem-statement channel</td></tr>
+      <tr><td class="num">3</td><td>PUB LOG downloadable from India</td><td>Real browser, real download. <strong>Day 1 — binary outcome, changes everything.</strong></td></tr>
+      <tr><td class="num">4</td><td>Real yield of standardization pairs in your FSC slice</td><td><code>awk -F'","' 'NR&gt;1 &amp;&amp; $2!=""' V_FLIS_STANDARDIZATION.CSV | wc -l</code></td></tr>
+      <tr><td class="num">5</td><td>NIIN counts per FSC (to size the slice)</td><td><code>awk</code> + <code>sort | uniq -c</code> on <code>P_FLIS_NSN.CSV</code></td></tr>
+      <tr><td class="num">6</td><td>BOLTS actual Cartesian yield</td><td>Parse the <code>.blt</code> files and count. ~2 hours, do it before committing.</td></tr>
+      <tr><td class="num">7</td><td>India's NCS tier status</td><td>NSPA NCS codes chart PDF — find India in it</td></tr>
+      <tr><td class="num">8</td><td>India's NCB code within NSN (believed 26)</td><td>ddpdos.gov.in NSN page</td></tr>
+      <tr><td class="num">9</td><td>Number of operating CPSEs</td><td>DPE Public Enterprises Survey PDF — <strong>the easiest fact in your deck to get wrong</strong></td></tr>
+      <tr><td class="num">10</td><td>UNSPSC free-vs-paid split</td><td><span class="b b-x">Note: unspsc.org has lapsed and now serves unrelated content. Use UNGM. Do not link unspsc.org.</span></td></tr>
+      <tr><td class="num">11</td><td>WDC Products / DeepMatcher licence terms</td><td>Check for a LICENSE in the archives; cite papers, don't republish files</td></tr>
+      <tr><td class="num">12</td><td>MTEB leaderboard current state</td><td>Open in a browser, filter &lt;500M params, <strong>screenshot with the date</strong>. Never quote a leaderboard number nobody has seen.</td></tr>
+      <tr><td class="num">13</td><td>SAP <code>MATMAS</code> / MDG duplicate-check naming</td><td>help.sap.com, before saying it aloud</td></tr>
+      <tr><td class="num">14</td><td>Whether real CPSE masters contain non-English text</td><td>Domain contact. <strong>Flips the multilingual recommendation if wrong.</strong></td></tr>
+      <tr><td class="num">15</td><td>robots.txt / ToS for anything you harvest</td><td>Each portal. Rate-limit ≤1 req/s, no login-gated content.</td></tr>
+      <tr><td class="num">16</td><td>Kaggle/Colab current GPU quotas</td><td>Check in week 1; they change</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ DECIDE ============ -->
+<section id="decide">
+  <div class="shead"><span class="mark">6</span><h2>Decisions we need from you</h2></div>
+  <p class="lead">Nothing in Phase 1 starts until these are answered. Each has a recommended default so you can accept rather than deliberate.</p>
+
+  <div class="q"><div class="q-q">1 · Team size, skills and realistic weekly hours?</div><div class="q-a"><p>The whole effort estimate hinges on this. <strong>Assumed:</strong> 5 people, ~3 effective days/week each, 8 weeks post-submission. Who owns ML, who owns backend, who owns frontend, who owns data? Tell us if the split is different — the cut list changes.</p></div></div>
+
+  <div class="q"><div class="q-q">2 · Do you have GPU access?</div><div class="q-a"><p><strong>Recommended default: assume Kaggle free tier and design so fine-tuning is an upgrade, not a dependency.</strong> An off-the-shelf embedding model plus a well-engineered feature scorer already gets most of the way. If you have a college lab GPU, say so and we widen the experiment budget.</p></div></div>
+
+  <div class="q"><div class="q-q">3 · Can you reach anyone inside a CPSE?</div><div class="q-a"><p>Faculty, alumni, family. Not for data — for <strong>15 minutes of sanity-checking item names and settling whether descriptions are ever non-English</strong>. This is the highest-leverage half-hour available to you and it costs nothing.</p></div></div>
+
+  <div class="q"><div class="q-q">4 · Which six commodity families?</div><div class="q-a"><p><strong>Recommended:</strong> fasteners, pipes/flanges/gaskets, valves, bearings, motors &amp; cables, lubricants. Valves and bearings are non-negotiable — valves because CPCL judges care, bearings because they showcase reference-method matching. Swap the others freely.</p></div></div>
+
+  <div class="q"><div class="q-q">5 · Is one person-week of manual pair labelling acceptable?</div><div class="q-a"><p><strong>Our answer: it is mandatory.</strong> Without ~300–500 hand-labelled real pairs you have no honest evaluation number, and every metric you report is measuring your own generator. If you cannot commit this, tell us now, because the evaluation strategy has to change and the claims you can make shrink substantially.</p></div></div>
+
+  <div class="q"><div class="q-q">6 · For 20 September — idea submission only, or a working demo?</div><div class="q-a"><p><strong>Recommended: idea + de-risking evidence.</strong> Submit the architecture, the data-provenance story, and the week-1 measurements (regex coverage, pair completeness, benchmark numbers). A half-built demo helps less than a measured claim.</p></div></div>
+
+  <div class="q"><div class="q-q">7 · Will the repository be public?</div><div class="q-a"><p>Affects what you may redistribute. <strong>Either way: do not commit the UNSPSC XLSX or the benchmark archives.</strong> Reference URLs, attribute BOLTS (LGPL-2.1+), and keep a <code>DATA_PROVENANCE.md</code> in the repo root — judges have been known to look.</p></div></div>
+
+  <div class="q"><div class="q-q">8 · Do you accept the cut list in §P?</div><div class="q-a"><p>This is the one that determines whether the project finishes. Specifically: <strong>no supplier graph, no graph database, no cost-savings analytics, no notifications, no blockchain, no multilingual, three RBAC roles not six.</strong> If you want any of these back, tell us which and what you are dropping in exchange.</p></div></div>
+
+  <div class="foot">
+    <p><strong>Phase 0 ends here.</strong> Nothing has been built and no project files have been created — all working material lives in a scratch directory outside your repository. On your approval, or your amendments, Phase 1 begins with the canonical layer and the extraction cascade.</p>
+    <p style="margin-top:12px">Epistemic key: <span class="b b-v">VERIFIED</span> a source was fetched and the URL recorded · <span class="b b-j">JUDGMENT</span> reasoned engineering opinion, argue with it · <span class="b b-u">UNVERIFIED</span> plausible but unchecked — verify before claiming · <span class="b b-x">REJECTED</span> considered and ruled out.</p>
+  </div>
+</section>
+
+</main>
+</div>
