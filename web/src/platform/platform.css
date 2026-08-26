@@ -1,0 +1,107 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   PLATFORM
+   Same tokens as the landing page, different density and rhythm.
+
+   The landing page argued for continuity, and the CTA hands NMC-00018426
+   across the boundary. Changing palette here would break the one thing the
+   whole page was about. What changes is scale: mono stops being a label font
+   and becomes the workhorse, because on this surface almost everything is a
+   datum.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* Surface elevation. Four steps is enough; more invites arbitrary choices. */
+  --color-panel: #0f1317;
+  --color-panel-hover: #151a1f;
+  --color-line-soft: #1c2228;
+  --color-line-hard: #2a323a;
+
+  /* Custom easing.
+     The built-in CSS curves are too weak to read as intentional. ease-in is
+     never used for UI: it delays the initial movement, which is the exact
+     moment the user is watching, so it feels slower than ease-out at the
+     same duration. */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* ── Pressable ─────────────────────────────────────────────────────────────
+   Anything pressable scales on :active. Instant physical feedback is the
+   cheapest way to make an interface feel like it is listening. */
+.pressable {
+  transition: transform 160ms var(--ease-out-strong),
+              background-color 160ms ease,
+              border-color 160ms ease,
+              color 160ms ease;
+}
+.pressable:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.pressable:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Rows ──────────────────────────────────────────────────────────────────
+   Colour only. A transform here would shift the row and make a dense list
+   feel unstable under the cursor. */
+.row-hover {
+  transition: background-color 140ms ease;
+}
+.row-hover:hover {
+  background-color: var(--color-panel-hover);
+}
+
+/* ── Entrances ─────────────────────────────────────────────────────────────
+   Never from scale(0): nothing in the real world appears from nothing. These
+   start at 0.98 and a small offset so the element already has a shape.
+
+   Transitions rather than keyframes, because results can be replaced while a
+   previous entrance is still running and a transition retargets from its
+   current value while a keyframe restarts from zero. */
+@keyframes enter-up {
+  from { opacity: 0; transform: translateY(6px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+.enter {
+  animation: enter-up 260ms var(--ease-out-strong) both;
+}
+
+/* ── The one place a transform is forbidden ────────────────────────────────
+   Keyboard navigation through the candidate list is a repeated action. Emil's
+   rule: anything performed tens or hundreds of times a day should not animate,
+   because the animation reads as latency. Selection is a colour and a rule,
+   applied instantly. */
+.kbd-selected {
+  background-color: var(--color-panel-hover);
+  box-shadow: inset 2px 0 0 var(--color-live);
+  transition: none;
+}
+
+/* ── Crossfade under blur ──────────────────────────────────────────────────
+   When the evidence panel swaps candidates, a plain crossfade shows two
+   readable tables overlapping, which looks like a glitch. A small blur during
+   the swap blends them so the eye reads one object changing rather than two
+   objects trading places. Kept well under 20px; heavy blur is expensive. */
+.swapping {
+  filter: blur(3px);
+  opacity: 0.4;
+  transition: filter 180ms ease, opacity 180ms ease;
+}
+.swapped {
+  filter: blur(0);
+  opacity: 1;
+  transition: filter 220ms ease, opacity 220ms ease;
+}
+
+/* ── Focus ──────────────────────────────────────────────────────────────── */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-live);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter { animation: none; }
+  .pressable:active:not(:disabled) { transform: none; }
+  .swapping, .swapped { filter: none; opacity: 1; transition: none; }
+}

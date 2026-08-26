@@ -127,6 +127,34 @@ _HEADS = ["HEXAGONAL", "SOCKET", "COUNTERSUNK"]
 _NOUNS = ["BOLT", "SCREW", "NUT", "STUD"]
 
 
+# The specs the demo narrative depends on. Random sampling of the spec space
+# does not guarantee these are present: at limit=600 the stainless 10x50 bolt
+# was absent, so the platform could not resolve the very material the landing
+# page resolves. They are prepended, never sampled away.
+#
+# These are ordinary specs from the same generator, not special-cased records.
+# Guaranteeing their presence makes the demo deterministic; it does not make
+# the match any less computed.
+DEMO_SPECS: list["Spec"] = [
+    # the canonical material the whole story is about
+    Spec(family='fastener', noun='BOLT', material='STAINLESS STEEL',
+         dia_mm=10.0, length_mm=50.0, head='HEXAGONAL'),
+    # the near miss: one critical attribute differs, text almost identical
+    Spec(family='fastener', noun='BOLT', material='STAINLESS STEEL',
+         dia_mm=10.0, length_mm=75.0, head='HEXAGONAL'),
+    # wrong item type, same everything else
+    Spec(family='fastener', noun='NUT', material='STAINLESS STEEL',
+         dia_mm=10.0, length_mm=None, head='HEXAGONAL'),
+    # wrong material, same dimensions
+    Spec(family='fastener', noun='BOLT', material='MILD STEEL',
+         dia_mm=10.0, length_mm=50.0, head='HEXAGONAL'),
+    # a valve and a bearing so the other families are reachable in the demo
+    Spec(family='valve', noun='VALVE', material='STAINLESS STEEL',
+         nominal_mm=50.0, pressure='16'),
+    Spec(family='bearing', noun='BEARING', material='STEEL', part_number='6205-2RS'),
+]
+
+
 def seed_specs(limit: int = 600, seed: int = 20260826) -> list[Spec]:
     """
     Enumerate canonical specs deterministically.
@@ -161,7 +189,11 @@ def seed_specs(limit: int = 600, seed: int = 20260826) -> list[Spec]:
         specs.append(Spec(family="bearing", noun="BEARING", material="STEEL", part_number=pn))
 
     rng.shuffle(specs)
-    return specs[:limit]
+    # Drop any sampled spec that duplicates a demo spec, then prepend the demo
+    # set so it survives the limit.
+    demo_keys = {d.key() for d in DEMO_SPECS}
+    sampled = [s for s in specs if s.key() not in demo_keys]
+    return DEMO_SPECS + sampled[: max(limit - len(DEMO_SPECS), 0)]
 
 
 def build_corpus(limit_specs: int = 600, variants_per_spec: int = 3,

@@ -84,6 +84,7 @@ export function Thesis() {
       .to(q('.js-hero-copy'), { yPercent: -40, autoAlpha: 0, duration: 0.12 }, 0)
       .to(q('.js-ink'), { color: '#f4f2ed', duration: 0.5 }, 0)
       .to(q('.js-dim'), { color: '#8a9096', duration: 0.5 }, 0)
+      .to(q('.js-live'), { color: '#1f9e86', duration: 0.5 }, 0)
 
     // 0.10 → 0.25  converge on a shared axis, then align.
     SOURCE_RECORDS.forEach((rec, i) => {
@@ -169,7 +170,7 @@ export function Thesis() {
                     screen readers and reduced-motion users get the resolution
                     without the animation. */}
                 <div className="js-resolved js-attrs mt-14 md:mt-16 flex flex-col justify-center">
-                  <p className="js-nmc t-datum text-live text-lg mb-6 tracking-wide">{CANONICAL.nmc}</p>
+                  <p className="js-nmc js-live t-datum text-live-ink text-lg mb-6 tracking-wide">{CANONICAL.nmc}</p>
                   <dl className="grid gap-3 m-0">
                     {CANONICAL.attributes.map((a) => (
                       <div key={a.label} className="grid grid-cols-[7rem_1fr] gap-4 items-baseline">

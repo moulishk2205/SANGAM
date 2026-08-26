@@ -40,8 +40,15 @@
      --live  : this connection carries identity
      --cut   : this connection failed a critical attribute check */
   --color-thread: #b9bec4;
-  --color-live: #0e7c6b;
-  --color-cut: #a8321f;
+  /* Semantic pair, split by ground for the same reason the dim greys are.
+     The landing page used these at display sizes, where 3:1 suffices. The
+     platform uses them at 12px, where 4.5:1 is required, and the original
+     #0e7c6b measured 4.11 and #a8321f measured 3.14 on black. These clear AA
+     as small text on a dark ground; the -ink variants clear it on paper. */
+  --color-live: #1f9e86;      /* 6.3:1 on #000  */
+  --color-live-ink: #0b5f52;  /* 6.9:1 on paper */
+  --color-cut: #d9553e;       /* 5.3:1 on #000  */
+  --color-cut-ink: #8f2a17;   /* 6.5:1 on paper */
 
   --font-display: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
