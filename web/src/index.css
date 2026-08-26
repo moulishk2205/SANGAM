@@ -263,6 +263,19 @@ body {
   --color-info-soft: #e9f1f8;
   --color-info-line: #b9d3ea;
 
+  /* Ambient semantic surfaces.
+     Used to tint a selected candidate card and a comparison row by its
+     verdict. Deliberately far lighter than the -soft tokens: these wash a
+     whole card or table row, so anything stronger fights the text and turns a
+     dense evidence table into a colour chart. The -soft tokens stay reserved
+     for small badges and the veto callout, which is why a vetoed row still
+     reads louder than an ordinary disagreement. */
+  --color-brand-ambient: #f1f8f6;
+  --color-distinct-ambient: #fdf5f3;
+  --color-neutral-ambient: #f7f7f5;
+  --color-agree-row: #f6fbf9;
+  --color-disagree-row: #fdf4f2;
+
   --font-ui: "Public Sans Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 

@@ -1,4 +1,4 @@
-import { useRef, type ReactNode, type MouseEvent } from 'react'
+import { useRef, type ReactNode, type MouseEvent, type CSSProperties } from 'react'
 import { motion } from 'motion/react'
 import { CheckCircle, XCircle, Question, Prohibit } from '@phosphor-icons/react'
 import type { Decision, Verdict } from '../api'
@@ -16,10 +16,12 @@ import type { Decision, Verdict } from '../api'
  * re-renders the tree on every frame and collapses on a long list.
  */
 export function Card({
-  children, className = '', interactive = false, spotlight = false, onClick, as = 'div',
+  children, className = '', interactive = false, spotlight = false, onClick, as = 'div', style,
 }: {
   children: ReactNode; className?: string; interactive?: boolean
   spotlight?: boolean; onClick?: () => void; as?: 'div' | 'article' | 'li'
+  /** Used for ambient semantic surfaces, e.g. a selected candidate. */
+  style?: CSSProperties
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const track = (e: MouseEvent) => {
@@ -35,6 +37,7 @@ export function Card({
       ref={ref}
       onMouseMove={spotlight ? track : undefined}
       onClick={onClick}
+      style={style}
       className={`card ${interactive ? 'card-interactive' : ''} ${spotlight ? 'spotlight' : ''} ${className}`}
     >
       {children}

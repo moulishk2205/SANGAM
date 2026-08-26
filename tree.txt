@@ -1,0 +1,156 @@
+.
+├── README.md
+├── conftest.py
+├── data
+│   ├── interim
+│   │   ├── flis
+│   │   │   ├── MRD0107.CSV
+│   │   │   ├── MRD0300.CSV
+│   │   │   ├── MRD0500.CSV
+│   │   │   ├── MRD06P1.CSV
+│   │   │   ├── MRD06P2.CSV
+│   │   │   ├── P_H2_PICK.CSV
+│   │   │   ├── P_H5_PICK.CSV
+│   │   │   ├── P_H6_PICK.CSV
+│   │   │   ├── V_FSC_IMM.CSV
+│   │   │   ├── V_H2_FSC.CSV
+│   │   │   ├── V_H2_FSC_INC.CSV
+│   │   │   ├── V_H2_FSG.CSV
+│   │   │   ├── V_H3_AMMUNITION.CSV
+│   │   │   ├── V_H5_BUSINESS.CSV
+│   │   │   ├── V_H5_CORPORATE.CSV
+│   │   │   ├── V_H5_DOMESTIC.CSV
+│   │   │   ├── V_H5_FOREIGN.CSV
+│   │   │   ├── V_H6_MODIFIER.CSV
+│   │   │   ├── V_H6_NAME_INC.CSV
+│   │   │   └── V_H6_RELATED.CSV
+│   │   └── slice
+│   │       ├── attribute_frequency.csv
+│   │       ├── nsn_attribute.csv
+│   │       ├── nsn_item.csv
+│   │       ├── nsn_part.csv
+│   │       └── nsn_standardization.csv
+│   ├── processed
+│   └── raw
+│       ├── flis
+│       │   ├── FLISV.zip
+│       │   ├── H-SERIES.zip
+│       │   ├── IDENTIFICATION.zip
+│       │   ├── MANIFEST.json
+│       │   ├── MRD.zip
+│       │   └── REFERENCE.zip
+│       └── gsa
+│           └── nsn-extract.xlsx
+├── docs
+│   ├── DATA_PROVENANCE.md
+│   ├── SIH26099-Phase0-Plan.html
+│   ├── SIH26099-Phase0-Plan.pdf
+│   ├── SPRINT0-FINDINGS.md
+│   ├── SPRINT1-ENGINE.md
+│   ├── experience
+│   │   ├── BRIEF.md
+│   │   ├── LANDING-PLAN.md
+│   │   ├── concepts
+│   │   │   ├── convergence.md
+│   │   │   ├── instrument.md
+│   │   │   └── twoscores.md
+│   │   ├── critique
+│   │   └── sections
+│   ├── phase0-original-brief.md
+│   └── research
+│       ├── datasets.md
+│       ├── domain-and-problem.md
+│       ├── ml-state-of-the-art.md
+│       ├── patternbreak-teardown.md
+│       └── platform-tech-research.md
+├── models
+│   └── bge-small-en-v1.5
+│       ├── 1_Pooling
+│       │   └── config.json
+│       ├── 2_Normalize
+│       │   └── config.json
+│       ├── README.md
+│       ├── config.json
+│       ├── config_sentence_transformers.json
+│       ├── model.safetensors
+│       ├── modules.json
+│       ├── sentence_bert_config.json
+│       ├── tokenizer.json
+│       └── tokenizer_config.json
+├── notebooks
+├── requirements.txt
+├── scripts
+│   ├── evaluate.py
+│   ├── fetch_flis.py
+│   ├── show_template.py
+│   └── slice_flis.py
+├── src
+│   ├── __init__.py
+│   └── nmc
+│       ├── __init__.py
+│       ├── api.py
+│       ├── demo
+│       │   ├── __init__.py
+│       │   └── corpus.py
+│       ├── eval
+│       │   └── __init__.py
+│       ├── extract
+│       │   ├── __init__.py
+│       │   ├── grammar.py
+│       │   └── templates.py
+│       ├── ingest
+│       │   └── __init__.py
+│       ├── match
+│       │   ├── __init__.py
+│       │   ├── compare.py
+│       │   ├── engine.py
+│       │   └── retrieve.py
+│       ├── normalise
+│       │   ├── __init__.py
+│       │   └── text.py
+│       └── types.py
+├── tests
+│   └── test_demo_moments.py
+├── tree.txt
+└── web
+    ├── README.md
+    ├── index.html
+    ├── package-lock.json
+    ├── package.json
+    ├── public
+    │   ├── _redirects
+    │   └── thread.svg
+    ├── src
+    │   ├── App.tsx
+    │   ├── app
+    │   │   ├── Platform.tsx
+    │   │   ├── api.ts
+    │   │   ├── components
+    │   │   ├── screens
+    │   │   └── tokens.css
+    │   ├── components
+    │   │   ├── Primitives.tsx
+    │   │   └── Verdict.tsx
+    │   ├── index.css
+    │   ├── lib
+    │   │   ├── content.ts
+    │   │   └── motion.ts
+    │   ├── main.tsx
+    │   └── sections
+    │       ├── Cta.tsx
+    │       ├── Disclosure.tsx
+    │       ├── Engine.tsx
+    │       ├── Foundation.tsx
+    │       ├── Future.tsx
+    │       ├── Scale.tsx
+    │       ├── Thesis.tsx
+    │       ├── Trap.tsx
+    │       ├── Unknown.tsx
+    │       ├── Validation.tsx
+    │       └── Veto.tsx
+    ├── tsconfig.app.json
+    ├── tsconfig.json
+    ├── tsconfig.node.json
+    └── vite.config.ts
+
+39 directories, 115 files
