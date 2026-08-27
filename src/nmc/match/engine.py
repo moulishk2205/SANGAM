@@ -57,6 +57,11 @@ T_REVIEW = 0.45
 class ScoredCandidate:
     record: MaterialRecord
     explanation: MatchExplanation
+    # Which retrieval channel proposed this candidate. Computed in retrieve.py and,
+    # until now, discarded here — it is the only signal that answers "why was this
+    # ever a candidate at all", and lexical-only and dense-only misses are visibly
+    # different kinds of wrong.
+    channels: tuple[str, ...] = ()
 
     @property
     def confidence(self) -> float:
@@ -120,7 +125,8 @@ class MatchingEngine:
         return Decision.DISTINCT
 
     def explain(self, source: MaterialRecord, candidate: MaterialRecord,
-                semantic: float | None = None, lexical: float | None = None) -> MatchExplanation:
+                semantic: float | None = None, lexical: float | None = None,
+                channels: list[str] | None = None) -> MatchExplanation:
         """Full comparison of one pair. This is what the evidence panel renders."""
         rows = compare(source, candidate)
         vetoed, reason = veto(rows)
@@ -163,6 +169,7 @@ class MatchingEngine:
             attribute_agreement=round(attr_agree, 4),
             critical_veto=vetoed,
             veto_reason=reason,
+            raw_score=round(raw, 4),
             rows=rows,
             n_agree=n_a, n_disagree=n_d, n_unknown=n_u,
             model_version=MODEL_VERSION,
@@ -185,7 +192,8 @@ class MatchingEngine:
                                        exclude_id=source.id)
         scored = [
             ScoredCandidate(h.record,
-                            self.explain(source, h.record, h.semantic_score, h.lexical_score))
+                            self.explain(source, h.record, h.semantic_score, h.lexical_score),
+                            channels=tuple(h.channels))
             for h in hits
         ]
         # veto'd last, then by score
@@ -193,7 +201,7 @@ class MatchingEngine:
         return scored[:top_k]
 
     def check_before_create(self, description: str, org: str = "", org_code: str = "",
-                            top_k: int = 3) -> tuple[MaterialRecord, list[ScoredCandidate]]:
+                            top_k: int = 3, pool: int = 50) -> tuple[MaterialRecord, list[ScoredCandidate]]:
         """
         The prevention path: is this proposed new material already in the master?
 
@@ -205,4 +213,4 @@ class MatchingEngine:
             provenance="HAND_CURATED",
         )
         self.prepare(probe)
-        return probe, self.match(probe, top_k=top_k)
+        return probe, self.match(probe, top_k=top_k, pool=max(pool, top_k * 2))

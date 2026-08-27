@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from ..types import AttributeSpec, Criticality as C
 
-CONFIG_VERSION = "template-v1"
+CONFIG_VERSION = "template-v2"
 
 # ---------------------------------------------------------------------------
 # Attribute registry
@@ -77,12 +77,43 @@ ATTRIBUTES: dict[str, AttributeSpec] = {
         provenance="often the same part cited against different equivalent standards",
     ),
     "PART_NUMBER": AttributeSpec(
-        "PART_NUMBER", "Manufacturer part number", C.IMPORTANT,
-        provenance="the reference method of identification; strong positive evidence when present",
+        "PART_NUMBER", "Manufacturer part number", C.CRITICAL,
+        provenance="when an item is identified by designation rather than description, "
+                   "the designation IS the identity — 6205 and 6305 share a bore and are "
+                   "different bearings",
     ),
     "SURFACE_TREATMENT": AttributeSpec(
         "SURFACE_TREATMENT", "Surface treatment", C.MINOR,
         provenance="plating usually does not change identity but is worth showing",
+    ),
+
+    # --- piping attributes, added in template-v2 ------------------------------
+    # Everything below is CRITICAL or IMPORTANT for a reason a piping engineer
+    # would recognise, not because more veto attributes make a better demo.
+    "SCHEDULE": AttributeSpec(
+        "SCHEDULE", "Schedule", C.CRITICAL,
+        provenance="schedule IS the wall thickness; SCH 40 and SCH 80 at the same bore "
+                   "are different parts with different pressure ratings and different weight",
+    ),
+    "VALVE_TYPE": AttributeSpec(
+        "VALVE_TYPE", "Valve type", C.CRITICAL,
+        provenance="a ball valve and a gate valve are not variants of one another — "
+                   "different actuation, different flow characteristic, not interchangeable",
+    ),
+    "FLANGE_TYPE": AttributeSpec(
+        "FLANGE_TYPE", "Flange type", C.CRITICAL,
+        provenance="weld neck, slip on and blind differ in how the joint is made; "
+                   "a blind flange has no bore at all",
+    ),
+    "FACING": AttributeSpec(
+        "FACING", "Facing", C.IMPORTANT,
+        provenance="raised face vs ring type joint changes the gasket and the bolt load, "
+                   "but is very often simply omitted from the description",
+    ),
+    "CONSTRUCTION": AttributeSpec(
+        "CONSTRUCTION", "Construction", C.IMPORTANT,
+        provenance="seamless vs welded matters in refinery service, yet is frequently "
+                   "unstated — IMPORTANT rather than CRITICAL so silence does not force review",
     ),
 }
 
@@ -125,22 +156,36 @@ ITEM_NAMES: dict[str, dict] = {
     },
     "BEARING, BALL, ANNULAR": {
         "tokens": ["BEARING"],
-        "attributes": ["ITEM_NAME", "PART_NUMBER", "BORE", "MATERIAL"],
+        # MATERIAL is deliberately absent. No real bearing description states one,
+        # so requiring it made every bearing pair abstain on an attribute that is
+        # never written down. The designation carries the identity instead.
+        "attributes": ["ITEM_NAME", "PART_NUMBER", "BORE"],
         "family": "bearing",
     },
-    "VALVE, GATE": {
+    # Renamed from "VALVE, GATE" in template-v2. The old name asserted the valve
+    # type in the item name itself, which made a ball valve unrepresentable; the
+    # type is now an attribute, and a CRITICAL one.
+    "VALVE": {
         "tokens": ["VALVE"],
-        "attributes": ["ITEM_NAME", "MATERIAL", "NOMINAL_SIZE", "PRESSURE_CLASS", "STANDARD"],
+        "attributes": ["ITEM_NAME", "MATERIAL", "VALVE_TYPE", "NOMINAL_SIZE",
+                       "PRESSURE_CLASS", "STANDARD"],
         "family": "valve",
     },
     "GASKET": {
         "tokens": ["GASKET"],
         "attributes": ["ITEM_NAME", "MATERIAL", "NOMINAL_SIZE", "PRESSURE_CLASS"],
-        "family": "pipe",
+        "family": "gasket",
     },
     "FLANGE, PIPE": {
         "tokens": ["FLANGE"],
-        "attributes": ["ITEM_NAME", "MATERIAL", "NOMINAL_SIZE", "PRESSURE_CLASS", "STANDARD"],
+        "attributes": ["ITEM_NAME", "MATERIAL", "FLANGE_TYPE", "NOMINAL_SIZE",
+                       "PRESSURE_CLASS", "FACING", "STANDARD"],
+        "family": "flange",
+    },
+    "PIPE": {
+        "tokens": ["PIPE"],
+        "attributes": ["ITEM_NAME", "MATERIAL", "NOMINAL_SIZE", "SCHEDULE",
+                       "CONSTRUCTION", "STANDARD"],
         "family": "pipe",
     },
 }

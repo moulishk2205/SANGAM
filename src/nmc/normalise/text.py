@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-GAZETTEER_VERSION = "gaz-v1"
+GAZETTEER_VERSION = "gaz-v2"
 
 # Expansion is applied on whole tokens only, longest-first, so SS -> STAINLESS STEEL
 # never fires inside a word. Sourced from common Indian CPSE / MRO storekeeper usage
@@ -85,8 +85,28 @@ ABBREVIATIONS: dict[str, str] = {
     # ratings
     "PN": "PRESSURE NOMINAL",
     "SCH": "SCHEDULE",
+    "SCHD": "SCHEDULE",
+    "CL": "CLASS",
     "GR": "GRADE",
     "GRD": "GRADE",
+    # pipe / flange / valve trade shorthand. Added in gaz-v2 alongside the pipe,
+    # flange and ball-valve item families; these are the forms a refinery
+    # storekeeper actually types.
+    "SMLS": "SEAMLESS",
+    "SEEMLESS": "SEAMLESS",          # a real and very common misspelling
+    "ERW": "ELECTRIC RESISTANCE WELDED",
+    "WN": "WELD NECK",
+    "SO": "SLIP ON",
+    "WNRF": "WELD NECK RAISED FACE",
+    "SORF": "SLIP ON RAISED FACE",
+    "SW": "SOCKET WELD",
+    "BLRF": "BLIND RAISED FACE",
+    "RF": "RAISED FACE",
+    "FF": "FLAT FACE",
+    "RTJ": "RING TYPE JOINT",
+    "BV": "BALL VALVE",
+    "GV": "GATE VALVE",
+    "NRV": "CHECK VALVE",
     # noise words that carry no identity
     "NOS": "",
     "NO.": "",
@@ -123,6 +143,21 @@ _DOTTED_UNIT = re.compile(r"\b([A-Z])\.([A-Z])\.?(?![A-Z])")   # M.M. -> MM
 _UNIT_ALTS = "|".join(sorted((re.escape(u) for u in UNIT_SYNONYMS if u.isalpha()),
                              key=len, reverse=True))
 _NUM_UNIT = re.compile(rf"(?<=\d)({_UNIT_ALTS})\b")
+
+# Size codes written glued to the number: 150NB, 4NPS. Kept separate from the unit
+# splitter above because these are not units — they are size-system markers, and
+# adding them to UNIT_SYNONYMS would let them be read as dimensions.
+_NUM_SIZECODE = re.compile(r"(?<=\d)(NB|NPS|ND)\b")
+
+# The inch mark written against a number: 4" -> 4 IN. It is the single most common
+# way a size is written on a pipe requisition and it is not a letter, so the unit
+# splitter above cannot reach it.
+_NUM_QUOTE = re.compile(r'(?<=\d)\s*["\u2033\u201d]')
+
+# Rating codes written glued to the number, the other way round: SCH40, PN16,
+# CLASS150, CL300. Without this, `PN16` survives as a single unknown token and the
+# pressure class of every valve written that way is silently never extracted.
+_CODE_NUM = re.compile(r"\b(SCHEDULE|SCHD|SCH|PN|CLASS|CL)(\d{1,4}S?)\b")
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,6 +203,10 @@ def normalise(text: str) -> Normalised:
 
     # 50MM -> 50 MM, using the known unit vocabulary only
     s = _NUM_UNIT.sub(r" \1", s)
+    # 150NB -> 150 NB, SCH40 -> SCH 40, PN16 -> PN 16
+    s = _NUM_SIZECODE.sub(r" \1", s)
+    s = _NUM_QUOTE.sub(" IN", s)
+    s = _CODE_NUM.sub(r"\1 \2", s)
 
     # Metric thread designators are one symbol: M 10 -> M10
     s = re.sub(r"\bM\s+(\d+(?:\.\d+)?)\b", r"M\1", s)

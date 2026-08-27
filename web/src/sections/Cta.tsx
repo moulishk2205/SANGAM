@@ -35,7 +35,7 @@ export function Cta() {
                          transition-colors duration-200 hover:bg-paper hover:text-ink
                          focus-visible:bg-paper focus-visible:text-ink"
             >
-              <span className="t-label">Enter the platform</span>
+              <span className="t-label">Open SANGAM</span>
               <ArrowRight size={16} weight="bold" aria-hidden="true"
                 className="transition-transform duration-200 group-hover:translate-x-1" />
             </a>
@@ -52,7 +52,8 @@ export function Cta() {
         <Shell>
           <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row gap-3 sm:justify-between">
             <p className="t-label text-graphite">
-              SIH26099 <span aria-hidden="true">·</span> Smart India Hackathon 2026
+              SANGAM <span aria-hidden="true">·</span> SIH26099
+              <span aria-hidden="true"> · </span> Smart India Hackathon 2026
             </p>
             <p className="t-label text-graphite">
               Ministry of Petroleum and Natural Gas <span aria-hidden="true">·</span> CPCL

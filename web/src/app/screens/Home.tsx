@@ -20,13 +20,14 @@ export function Home() {
   const [q, setQ] = useState('')
   const [stats, setStats] = useState<Stats | null>(null)
   const [health, setHealth] = useState<Health | null>(null)
-  const [samples, setSamples] = useState<string[]>([])
+  type Example = { chip: string; query: string; note: string; item_name: string }
+  const [samples, setSamples] = useState<Example[]>([])
   const [err, setErr] = useState<string | null>(null)
 
   useEffect(() => {
     api.stats().then(setStats).catch((e) => setErr(readableError(e)))
     api.health().then(setHealth).catch(() => {})
-    api.samples().then((s) => setSamples(s.samples)).catch(() => {})
+    api.samples().then((s) => setSamples(s.examples ?? [])).catch(() => {})
   }, [])
 
   const go = (text: string) => {
@@ -74,26 +75,39 @@ export function Home() {
             </form>
           </Card>
 
+          {/* Examples load the field; they do not run. The primary action stays
+              the one the visitor presses, so nothing happens that they did not
+              ask for and they can read the description before analysing it. */}
           {samples.length > 0 && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-[12px] text-[var(--color-text-3)] inline-flex items-center gap-1">
-                <Sparkle size={12} weight="fill" aria-hidden="true" /> Try
-              </span>
-              {samples.map((s, i) => (
-                <motion.button
-                  key={s}
-                  onClick={() => go(s)}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.06 * i, ease: [0.23, 1, 0.32, 1] }}
-                  className="press mono rounded-full border border-[var(--color-line)] bg-[var(--color-surface)]
-                             px-3 py-1.5 text-[11.5px] text-[var(--color-text-2)] cursor-pointer
-                             hover:border-[var(--color-brand-line)] hover:text-[var(--color-brand)]
-                             hover:bg-[var(--color-brand-soft)] transition-colors duration-200"
-                >
-                  {s}
-                </motion.button>
-              ))}
+            <div className="mt-4">
+              <p className="text-[12px] text-[var(--color-text-3)] inline-flex items-center gap-1.5 mb-2">
+                <Sparkle size={12} weight="fill" aria-hidden="true" />
+                Try an example — loads the field above, does not run
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {samples.map((s, i) => (
+                  <motion.button
+                    key={s.query}
+                    onClick={() => { setQ(s.query); document.getElementById('home-q')?.focus() }}
+                    title={s.note}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.04 * i, ease: [0.23, 1, 0.32, 1] }}
+                    className="press group rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)]
+                               px-3 py-2 text-left cursor-pointer max-w-full
+                               hover:border-[var(--color-brand-line)] hover:bg-[var(--color-brand-soft)]
+                               transition-colors duration-200"
+                  >
+                    <span className="block text-[12.5px] font-semibold text-[var(--color-text)]
+                                     group-hover:text-[var(--color-brand)]">
+                      {s.chip}
+                    </span>
+                    <span className="mono block text-[11px] text-[var(--color-text-3)] mt-0.5 truncate max-w-[30ch]">
+                      {s.query}
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
             </div>
           )}
         </motion.div>

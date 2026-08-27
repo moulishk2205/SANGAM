@@ -18,7 +18,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from .demo.corpus import build_corpus
+from .types import MaterialRecord
 from .match.engine import MODEL_VERSION, MatchingEngine
+from .relate import build_map
 
 # Held at module scope: the index is expensive to build and must be built once,
 # at startup, not per request.
@@ -91,12 +93,13 @@ async def lifespan(_: FastAPI):
     _engine = None
 
 
-app = FastAPI(title="SIH26099 Material Intelligence", lifespan=lifespan)
+app = FastAPI(title="SANGAM — Material Intelligence (SIH26099)", lifespan=lifespan)
 
 # The frontend is served from a different origin in development only.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:4173"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174",
+                   "http://localhost:4173", "http://localhost:4174"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -111,6 +114,14 @@ def engine() -> MatchingEngine:
 class MatchRequest(BaseModel):
     description: str = Field(min_length=1, max_length=300)
     top_k: int = Field(default=5, ge=1, le=20)
+
+
+class MapRequest(BaseModel):
+    description: str = Field(min_length=1, max_length=300)
+    # Capped at 60. Beyond that the projection stops being separable on screen
+    # and the neighbour matrix stops being free; refusing is better than
+    # degrading quietly into an unreadable cloud.
+    top_k: int = Field(default=24, ge=4, le=60)
 
 
 @app.get("/api/health")
@@ -195,22 +206,68 @@ def material(record_id: str) -> dict:
     }
 
 
+# Example queries offered on the home screen.
+#
+# Each one is written the way a storekeeper would actually type it, and each
+# exercises a different part of the pipeline. They are validated against the
+# live index at startup rather than trusted: a sample that retrieves nothing is
+# a worse demo than no sample at all, so `/api/samples` drops any entry whose
+# item type the classifier cannot resolve.
+_SAMPLES: list[dict] = [
+    {"chip": "SS hex bolt", "query": "STAINLESS STEEL HEXAGONAL BOLT 10MM X 50MM",
+     "note": "the long form — every word spelled out"},
+    {"chip": "Same bolt, abbreviated", "query": "SS HEX BOLT M10 X 50",
+     "note": "the same material, written the way it is actually typed"},
+    {"chip": "Length near-miss", "query": "SS HEX BOLT M10 X 75",
+     "note": "one critical attribute apart from the bolt above — watch the veto"},
+    {"chip": "Carbon steel pipe", "query": "CARBON STEEL SEAMLESS PIPE 100MM NB SCH 40",
+     "note": "bore and schedule both decide identity"},
+    {"chip": "Pipe in inches", "query": "CS SEAMLESS PIPE 4 INCH SCH 40",
+     "note": "NPS 4 is DN 100 — a designation, not a unit conversion"},
+    {"chip": "Weld neck flange", "query": "CARBON STEEL WELD NECK FLANGE 150NB CLASS 300",
+     "note": "flange type, bore and class are all critical"},
+    {"chip": "Ball valve", "query": "STAINLESS STEEL BALL VALVE 2 INCH CLASS 150",
+     "note": "a ball valve is not a gate valve of the same size"},
+    {"chip": "Nut, not bolt", "query": "NUT HEX SS M10",
+     "note": "same thread, same material, different item type"},
+]
+
+
 @app.get("/api/samples")
 def samples() -> dict:
     """
-    Seeded example queries for the demo, drawn from the live corpus.
+    Seeded example queries for the demo, verified against the live corpus.
 
-    Returned by the API rather than hard-coded in the UI so that the examples
-    are guaranteed to exist in the index that is actually loaded.
+    Returned by the API rather than hard-coded in the UI so the examples are
+    guaranteed to work against the index that is actually loaded, not against
+    the one that existed when the UI was written.
     """
     eng = engine()
-    picks = ["SS HEX BOLT M10 X 50", "STAINLESS STEEL HEXAGONAL BOLT 10MM X 50MM",
-             "SS HEX BOLT M10 X 75", "NUT HEX SS M10"]
+    usable = []
+    for s in _SAMPLES:
+        probe = eng.prepare(MaterialRecord(id="__sample__", raw_description=s["query"]))
+        if probe.item_name:
+            usable.append({**s, "item_name": probe.item_name})
     return {
-        "samples": picks,
+        "samples": [s["query"] for s in usable],       # kept for existing callers
+        "examples": usable,
         "corpus_size": len(eng.records),
         "organisations": sorted({r.org for r in eng.records if r.org}),
     }
+
+
+@app.post("/api/visualization")
+def visualization(req: MapRequest) -> dict:
+    """
+    The material relationship map.
+
+    Runs the ordinary pipeline — the very same `check_before_create` the Analyse
+    screen calls — and then describes the result as a graph. There is no second
+    engine, no second scoring path and no cached layout: analyse a description
+    here and on the Analyse screen and the two must agree, because they are one
+    call.
+    """
+    return build_map(engine(), _by_record, req.description, top_k=req.top_k)
 
 
 @app.get("/api/canonical")

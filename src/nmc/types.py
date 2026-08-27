@@ -262,6 +262,12 @@ class MatchExplanation:
     attribute_agreement: float
     critical_veto: bool
     veto_reason: str
+    # The weighted score BEFORE the veto multiplies it. For a vetoed pair this is
+    # the number the system would have reported had the gate been a weight, and
+    # `confidence` is that number multiplied by zero. Returned rather than left
+    # for a client to recompute: the client cannot reproduce it exactly, because
+    # the inputs it would use are already rounded to four places on the way out.
+    raw_score: float = 0.0
     rows: list[AttributeComparison] = field(default_factory=list)
     n_agree: int = 0
     n_disagree: int = 0
@@ -277,6 +283,7 @@ class MatchExplanation:
             "candidate_id": self.candidate_id,
             "decision": self.decision.value,
             "confidence": round(self.confidence, 4),
+            "raw_score": round(self.raw_score, 4),
             # An uncalibrated ranking score, NOT a probability. Presenting it as
             # "97% likely correct" would require a fitted calibrator on a labelled
             # held-out set, which is Phase 2 work. Consumers must not relabel it.
@@ -286,6 +293,17 @@ class MatchExplanation:
             "attribute_agreement": round(self.attribute_agreement, 4),
             "critical_veto": self.critical_veto,
             "veto_reason": self.veto_reason,
+            # The scoring rule, as the terms that actually produced this number.
+            # Rendering "0.85 x 0.800 + 0.15 x 0.9910 = 0.8287, x veto 0 = 0.0000"
+            # is what makes "the veto is a gate, not a weight" undeniable rather
+            # than merely asserted.
+            "arithmetic": {
+                "w_attr": 0.85, "attr": round(self.attribute_agreement, 4),
+                "w_text": 0.15, "text": round(max(self.semantic_score, self.lexical_score), 4),
+                "raw": round(self.raw_score, 4),
+                "veto": 0 if self.critical_veto else 1,
+                "final": round(self.confidence, 4),
+            },
             "counts": {"agree": self.n_agree, "disagree": self.n_disagree, "unknown": self.n_unknown},
             "evidence": [
                 {

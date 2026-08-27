@@ -49,11 +49,19 @@ class Spec:
     nominal_mm: float | None = None
     pressure: str = ""
     part_number: str = ""
+    # piping fields, added alongside the pipe / flange / ball-valve families
+    schedule: str = ""
+    valve_type: str = ""
+    flange_type: str = ""
+    facing: str = ""
+    construction: str = ""
 
     def key(self) -> str:
         return "|".join(str(x) for x in (
             self.noun, self.material, self.dia_mm, self.length_mm, self.head,
-            self.grade, self.nominal_mm, self.pressure, self.part_number))
+            self.grade, self.nominal_mm, self.pressure, self.part_number,
+            self.schedule, self.valve_type, self.flange_type, self.facing,
+            self.construction))
 
 
 # --- surface-form renderers: the same spec, five storekeepers ------------------
@@ -65,6 +73,18 @@ _MAT_SHORT = {
     "GALVANISED IRON": "GI", "BRASS": "BR", "ALUMINIUM": "AL",
 }
 _HEAD_SHORT = {"HEXAGONAL": "HEX", "SOCKET": "SKT", "COUNTERSUNK": "CSK", "SQUARE": "SQ"}
+_FLANGE_SHORT = {"WELD NECK": "WN", "SLIP ON": "SO", "BLIND": "BLIND",
+                 "SOCKET WELD": "SW", "THREADED": "THREADED"}
+_FACING_SHORT = {"RAISED FACE": "RF", "FLAT FACE": "FF", "RING TYPE JOINT": "RTJ"}
+_CONSTRUCTION_SHORT = {"SEAMLESS": "SMLS", "WELDED": "WELDED",
+                       "ELECTRIC RESISTANCE WELDED": "ERW"}
+
+# DN -> NPS, the inverse of the designation table the extractor uses. Rendering a
+# size in inches is not a unit conversion: DN 100 is written 4", never 3.94".
+_DN_TO_NPS: dict[float, str] = {
+    15: "1/2", 20: "3/4", 25: "1", 32: "1.1/4", 40: "1.1/2", 50: "2", 65: "2.1/2",
+    80: "3", 100: "4", 150: "6", 200: "8", 250: "10", 300: "12",
+}
 
 
 def _fastener_styles(s: Spec) -> list[str]:
@@ -72,7 +92,19 @@ def _fastener_styles(s: Spec) -> list[str]:
     head_l, head_s = s.head, _HEAD_SHORT.get(s.head, s.head)
     d, L = s.dia_mm, s.length_mm
     di = f"{d:g}" if d and d == int(d) else f"{d}"
-    Li = f"{L:g}" if L and L == int(L) else f"{L}"
+    # A nut has no length. Interpolating it unguarded emitted the literal string
+    # "None" into the description ("NUT HEX GI M20 X None MM"), which then broke
+    # the metric-thread rule and left THREAD_DIA — a CRITICAL attribute —
+    # unextracted on every nut written that way.
+    if L is None:
+        return ([
+            f"{mat_s} {head_s} {s.noun} M{di}",
+            f"{mat_l} {head_l} {s.noun} {di}MM",
+            f"{s.noun} {head_s} {mat_s} M{di}",
+            f"{head_l} {s.noun} - {mat_s} - {di}MM DIA",
+        ] + ([f"{mat_s} {head_s} {s.noun} M{di} GR {s.grade}"] if s.grade else [])
+           + ([f"{s.noun} {head_s} {mat_s} {s.standard} M{di}"] if s.standard else []))
+    Li = f"{L:g}" if L == int(L) else f"{L}"
     out = [
         f"{mat_s} {head_s} {s.noun} M{di} X {Li}",
         f"{mat_l} {head_l} {s.noun} {di}MM X {Li}MM",
@@ -91,12 +123,60 @@ def _fastener_styles(s: Spec) -> list[str]:
 def _valve_styles(s: Spec) -> list[str]:
     mat_s = _MAT_SHORT.get(s.material, s.material)
     n = f"{s.nominal_mm:g}"
-    return [
-        f"{s.noun} GATE {mat_s} {n}MM NB PN{s.pressure}",
-        f"{s.material} GATE {s.noun} {n} MM NOMINAL BORE CLASS {s.pressure}",
-        f"{s.noun} {mat_s} GATE {n}NB #{s.pressure}",
-        f"GATE {s.noun} - {mat_s} - {n} MM NB - PN {s.pressure}",
+    vt = s.valve_type or "GATE"
+    out = [
+        f"{s.noun} {vt} {mat_s} {n}MM NB PN{s.pressure}",
+        f"{s.material} {vt} {s.noun} {n} MM NOMINAL BORE CLASS {s.pressure}",
+        f"{s.noun} {mat_s} {vt} {n}NB #{s.pressure}",
+        f"{vt} {s.noun} - {mat_s} - {n} MM NB - PN {s.pressure}",
     ]
+    nps = _DN_TO_NPS.get(s.nominal_mm)
+    if nps:
+        out.append(f"{mat_s} {vt} {s.noun} {nps} INCH CLASS {s.pressure}")
+        out.append(f'{s.noun} {vt} {mat_s} {nps}" #{s.pressure}')
+    return out
+
+
+def _pipe_styles(s: Spec) -> list[str]:
+    """
+    One pipe spec, six requisition styles.
+
+    Identity-preserving like every other renderer here: bore, schedule and
+    construction survive all six unchanged. Only the spelling moves.
+    """
+    mat_s = _MAT_SHORT.get(s.material, s.material)
+    con_s = _CONSTRUCTION_SHORT.get(s.construction, s.construction)
+    n = f"{s.nominal_mm:g}"
+    out = [
+        f"{mat_s} {con_s} PIPE {n}MM NB SCH {s.schedule}",
+        f"{s.material} {s.construction} PIPE {n} MM NOMINAL BORE SCHEDULE {s.schedule}",
+        f"PIPE {mat_s} {n}NB SCH{s.schedule} {con_s}",
+        f"PIPE - {mat_s} - {n} MM NB - SCH {s.schedule} - {s.construction}",
+    ]
+    nps = _DN_TO_NPS.get(s.nominal_mm)
+    if nps:
+        out.append(f"{mat_s} {con_s} PIPE {nps} INCH SCH {s.schedule}")
+        out.append(f'PIPE {mat_s} {nps}" SCHEDULE {s.schedule} {con_s}')
+    return out
+
+
+def _flange_styles(s: Spec) -> list[str]:
+    mat_s = _MAT_SHORT.get(s.material, s.material)
+    ft_s = _FLANGE_SHORT.get(s.flange_type, s.flange_type)
+    fc_s = _FACING_SHORT.get(s.facing, s.facing)
+    n = f"{s.nominal_mm:g}"
+    tail = f" {fc_s}" if fc_s else ""
+    tail_l = f" {s.facing}" if s.facing else ""
+    out = [
+        f"{mat_s} {ft_s}{tail} FLANGE {n}NB CL{s.pressure}",
+        f"{s.material} {s.flange_type}{tail_l} FLANGE {n} MM NOMINAL BORE CLASS {s.pressure}",
+        f"FLANGE {ft_s} {mat_s} {n} MM NB #{s.pressure}{tail}",
+        f"FLANGE - {mat_s} - {s.flange_type} - {n} NB - CLASS {s.pressure}{tail_l}",
+    ]
+    nps = _DN_TO_NPS.get(s.nominal_mm)
+    if nps:
+        out.append(f"{mat_s} {ft_s} FLANGE {nps} INCH CLASS {s.pressure}{tail}")
+    return out
 
 
 def _bearing_styles(s: Spec) -> list[str]:
@@ -113,6 +193,10 @@ def render(s: Spec) -> list[str]:
         return _fastener_styles(s)
     if s.family == "valve":
         return _valve_styles(s)
+    if s.family == "pipe":
+        return _pipe_styles(s)
+    if s.family == "flange":
+        return _flange_styles(s)
     if s.family == "bearing":
         return _bearing_styles(s)
     return [f"{s.material} {s.noun}"]
@@ -150,8 +234,29 @@ DEMO_SPECS: list["Spec"] = [
          dia_mm=10.0, length_mm=50.0, head='HEXAGONAL'),
     # a valve and a bearing so the other families are reachable in the demo
     Spec(family='valve', noun='VALVE', material='STAINLESS STEEL',
-         nominal_mm=50.0, pressure='16'),
+         nominal_mm=50.0, pressure='16', valve_type='GATE'),
     Spec(family='bearing', noun='BEARING', material='STEEL', part_number='6205-2RS'),
+
+    # --- piping demo pairs ----------------------------------------------------
+    # Each pair below is one attribute apart, and that attribute is CRITICAL. They
+    # exist so the veto can be demonstrated on something other than a bolt: a
+    # reviewer from a refinery recognises these immediately.
+    #
+    # schedule veto: same bore, same material, same construction, different wall
+    Spec(family='pipe', noun='PIPE', material='CARBON STEEL',
+         nominal_mm=100.0, schedule='40', construction='SEAMLESS'),
+    Spec(family='pipe', noun='PIPE', material='CARBON STEEL',
+         nominal_mm=100.0, schedule='80', construction='SEAMLESS'),
+    # valve type veto: same bore, same class, same material, ball vs gate
+    Spec(family='valve', noun='VALVE', material='STAINLESS STEEL',
+         nominal_mm=50.0, pressure='150', valve_type='BALL'),
+    Spec(family='valve', noun='VALVE', material='STAINLESS STEEL',
+         nominal_mm=50.0, pressure='150', valve_type='GATE'),
+    # flange, and its pressure-class near miss
+    Spec(family='flange', noun='FLANGE', material='CARBON STEEL',
+         nominal_mm=150.0, pressure='300', flange_type='WELD NECK', facing='RAISED FACE'),
+    Spec(family='flange', noun='FLANGE', material='CARBON STEEL',
+         nominal_mm=150.0, pressure='150', flange_type='WELD NECK', facing='RAISED FACE'),
 ]
 
 
@@ -181,9 +286,28 @@ def seed_specs(limit: int = 600, seed: int = 20260826) -> list[Spec]:
 
     for mat in ["STAINLESS STEEL", "CARBON STEEL"]:
         for n in [25, 50, 80, 100, 150, 200]:
-            for p in ["16", "40", "150"]:
-                specs.append(Spec(family="valve", noun="VALVE", material=mat,
-                                  nominal_mm=float(n), pressure=p))
+            for p in ["16", "40", "150", "300"]:
+                for vt in ["GATE", "BALL", "GLOBE", "CHECK"]:
+                    specs.append(Spec(family="valve", noun="VALVE", material=mat,
+                                      nominal_mm=float(n), pressure=p, valve_type=vt))
+
+    # Pipe. Schedule is the wall thickness, so bore alone does not identify a pipe —
+    # which is exactly why SCHEDULE is a veto attribute.
+    for mat in ["CARBON STEEL", "STAINLESS STEEL", "GALVANISED IRON"]:
+        for n in [25, 50, 80, 100, 150, 200, 250, 300]:
+            for sch in ["10", "40", "80", "160"]:
+                for con in ["SEAMLESS", "WELDED"]:
+                    specs.append(Spec(family="pipe", noun="PIPE", material=mat,
+                                      nominal_mm=float(n), schedule=sch, construction=con))
+
+    for mat in ["CARBON STEEL", "STAINLESS STEEL"]:
+        for n in [25, 50, 80, 100, 150, 200]:
+            for cls in ["150", "300", "600"]:
+                for ft in ["WELD NECK", "SLIP ON", "BLIND"]:
+                    for fc in ["RAISED FACE", "FLAT FACE"]:
+                        specs.append(Spec(family="flange", noun="FLANGE", material=mat,
+                                          nominal_mm=float(n), pressure=cls,
+                                          flange_type=ft, facing=fc))
 
     for pn in ["6205-2RS", "6206-2RS", "6205ZZ", "6304", "6308-C3", "6202"]:
         specs.append(Spec(family="bearing", noun="BEARING", material="STEEL", part_number=pn))

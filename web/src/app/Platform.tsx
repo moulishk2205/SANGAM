@@ -1,13 +1,14 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Link, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { House, MagnifyingGlass, Cube, ArrowLeft, Stack } from '@phosphor-icons/react'
+import { House, MagnifyingGlass, Cube, ArrowLeft, Stack, Graph } from '@phosphor-icons/react'
 import './tokens.css'
 
 import { Home } from './screens/Home'
 import { Analyse } from './screens/Analyse'
 import { Canonical } from './screens/Canonical'
 import { Explorer } from './screens/Explorer'
+import { Visualize } from './screens/Visualize'
 
 /**
  * Application shell.
@@ -18,9 +19,10 @@ import { Explorer } from './screens/Explorer'
  */
 
 const NAV = [
-  { to: '/platform',           label: 'Home',     Icon: House,           end: true },
-  { to: '/platform/analyse',   label: 'Analyse',  Icon: MagnifyingGlass, end: false },
-  { to: '/platform/explorer',  label: 'Explorer', Icon: Stack,           end: false },
+  { to: '/platform',              label: 'Home',          Icon: House,           end: true },
+  { to: '/platform/analyse',      label: 'Analyse',       Icon: MagnifyingGlass, end: false },
+  { to: '/platform/explorer',     label: 'Explorer',      Icon: Stack,           end: false },
+  { to: '/platform/visualization', label: 'Visualization', Icon: Graph,          end: false },
 ]
 
 function Rail() {
@@ -75,8 +77,8 @@ function Chrome() {
               <Cube size={17} weight="fill" />
             </span>
             <span className="leading-tight">
-              <span className="block text-[14.5px] font-bold text-[var(--color-text)]">
-                Material Intelligence
+              <span className="block text-[15px] font-bold tracking-[0.02em] text-[var(--color-text)]">
+                SANGAM
               </span>
               <span className="block text-[11.5px] text-[var(--color-text-3)]">
                 SIH26099 · MoP&amp;NG / CPCL
@@ -109,6 +111,7 @@ function Chrome() {
                   <Route path="/platform/analyse" element={<Analyse />} />
                   <Route path="/platform/material/:nmc" element={<Canonical />} />
                   <Route path="/platform/explorer" element={<Explorer />} />
+                  <Route path="/platform/visualization" element={<Visualize />} />
                 </Routes>
               </motion.div>
             </AnimatePresence>

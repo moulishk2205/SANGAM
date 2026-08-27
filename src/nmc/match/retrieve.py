@@ -111,6 +111,7 @@ class Retriever:
     def __init__(self, use_embeddings: bool = True) -> None:
         self.records: list[MaterialRecord] = []
         self.norms: list[Normalised] = []
+        self._index_of: dict[str, int] = {}
         self.lex = _CharNgramIndex()
         self._model = None
         self._emb: np.ndarray | None = None
@@ -132,9 +133,26 @@ class Retriever:
     # -- build -----------------------------------------------------------------
     def build(self, records: list[MaterialRecord], norms: list[Normalised]) -> None:
         self.records, self.norms = records, norms
+        self._index_of = {r.id: i for i, r in enumerate(records)}
         self.lex.build([n.text for n in norms], [spec_tokens(n) for n in norms])
         if self._model is not None:
             self._emb = self._encode([n.text for n in norms])
+
+    # -- vector access ---------------------------------------------------------
+    # The visualization needs the actual embeddings, not a proxy for them. Exposed
+    # read-only rather than recomputed, so what is plotted is byte-identical to
+    # what retrieval ranked on.
+
+    def vector_of(self, record_id: str) -> np.ndarray | None:
+        """The stored embedding for an indexed record, or None if dense is off."""
+        if self._emb is None:
+            return None
+        i = self._index_of.get(record_id)
+        return None if i is None else self._emb[i]
+
+    def encode_one(self, text: str) -> np.ndarray | None:
+        """Embed an ad-hoc string in the same space as the index."""
+        return None if self._model is None else self._encode([text])[0]
 
     def _encode(self, texts: list[str]) -> np.ndarray:
         v = self._model.encode(texts, batch_size=128, normalize_embeddings=True,

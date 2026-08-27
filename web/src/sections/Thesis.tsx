@@ -133,6 +133,8 @@ export function Thesis() {
         <header className="js-chrome relative z-20 pt-8 md:pt-10">
           <Shell className="flex items-start justify-between gap-6">
             <p className="t-label js-ink text-ink">
+              <span className="js-live text-live-ink">SANGAM</span>
+              <span aria-hidden="true"> · </span>
               SIH26099 <span aria-hidden="true">·</span> MoP&amp;NG / CPCL
             </p>
             <p className="t-label border border-current/25 px-2.5 py-1.5 js-ink text-ink">
@@ -207,8 +209,9 @@ export function Thesis() {
                   lines={['One bolt.', 'Five names.', 'No code in common.']}
                   className="t-display js-ink text-ink text-[clamp(2.75rem,8vw,7rem)]"
                 />
-                <p className="js-standfirst js-dim t-datum text-slate mt-8 max-w-[52ch]">
-                  One Nation, One Material Code. Every organisation keeps its own code, permanently.
+                <p className="js-standfirst js-dim t-datum text-slate mt-8 max-w-[54ch]">
+                  SANGAM is the confluence. One Nation, One Material Code — and every
+                  organisation keeps its own code, permanently.
                 </p>
               </div>
 

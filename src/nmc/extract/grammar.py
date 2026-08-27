@@ -16,6 +16,7 @@ import re
 
 from ..normalise.text import Normalised
 from ..types import Categorical, MaterialRecord, Point, Quantity, ValueSet
+from .templates import family_for
 
 # ---------------------------------------------------------------------------
 # Unit conversion
@@ -29,6 +30,41 @@ _TO_MM = {"MM": 1.0, "CM": 10.0, "M": 1000.0, "IN": 25.4}
 def _to_mm(value: float, unit: str) -> tuple[float, str]:
     f = _TO_MM.get(unit.upper())
     return (value * f, "mm") if f else (value, unit.lower())
+
+
+# ---------------------------------------------------------------------------
+# Nominal bore is a DESIGNATION, not a dimension
+# ---------------------------------------------------------------------------
+# NPS 2 and DN 50 are the same size. They are not 50.8 mm and 50 mm — neither
+# number is the bore of anything; both are labels drawn from a standard table
+# (ASME B36.10M / ISO 6708). Converting inches with x25.4 here would make every
+# correct imperial/metric pair disagree by 0.8 mm and, because NOMINAL_SIZE is a
+# CRITICAL attribute, would VETO them. That is the single most damaging thing
+# this file could get wrong for piping, so the table is explicit.
+_NPS_TO_DN: dict[float, float] = {
+    0.125: 6, 0.25: 8, 0.375: 10, 0.5: 15, 0.75: 20, 1: 25, 1.25: 32, 1.5: 40,
+    2: 50, 2.5: 65, 3: 80, 3.5: 90, 4: 100, 5: 125, 6: 150, 8: 200, 10: 250,
+    12: 300, 14: 350, 16: 400, 18: 450, 20: 500, 24: 600, 30: 750, 36: 900,
+}
+
+
+def _nominal_mm(value: float, unit: str) -> tuple[float, str, str]:
+    """
+    Resolve a stated nominal size to the DN designation in millimetres.
+
+    Returns (value, unit, note). The note records how the reading was made so the
+    evidence panel can show that a designation lookup happened rather than a
+    silent arithmetic conversion.
+    """
+    if unit.upper() == "IN":
+        dn = _NPS_TO_DN.get(value)
+        if dn is not None:
+            return float(dn), "mm", f"NPS {value:g} = DN {dn:g}"
+        # Off-table imperial size: fall back to arithmetic and say so, rather
+        # than inventing a designation that does not exist.
+        return value * 25.4, "mm", f"NPS {value:g} not in the DN table, converted arithmetically"
+    v, u = _to_mm(value, unit)
+    return v, u, ""
 
 
 # ---------------------------------------------------------------------------
@@ -66,11 +102,50 @@ _R_GRADE = re.compile(r"\b(?:GRADE\s*)?(?P<g>(?:A[24]-\d{2})|(?:\d\.\d)|(?:8\.8|
 # R07 standards reference
 _R_STANDARD = re.compile(r"\b(?P<s>(?:IS|DIN|ISO|ASTM|ANSI|BS|EN)\s*\d+[A-Z0-9\-]*)\b")
 # R08 pressure class
-_R_PRESSURE = re.compile(r"\b(?:PRESSURE\s+NOMINAL\s*|PN\s*|CLASS\s*|#)(?P<p>\d{2,4})\b")
+# The '#' form must sit OUTSIDE the leading \b. '#' is a non-word character, so
+# after a space `\b#` can never match — which silently meant that every record
+# written `... 150 NB #300` had no pressure class extracted at all, and pressure
+# class is CRITICAL. The bug hid because the affected pairs fell to
+# REVIEW_REQUIRED rather than to a visibly wrong answer.
+_R_PRESSURE = re.compile(
+    r"(?:\b(?:PRESSURE\s+NOMINAL|PN|CLASS)\s*|#\s*)(?P<p>\d{2,4})\b")
 # R09 bearing-style part number: 6205-2RS, 6205 2RS, 6205ZZ
 _R_BEARING_PN = re.compile(r"\b(?P<pn>\d{4,5}\s*-?\s*(?:2RS|RS|ZZ|Z|2Z|C3|N|NR)?)\b")
-# R10 nominal bore / pipe size
+# R10 nominal bore / pipe size, stated with its size-system marker
 _R_NB = re.compile(r"\b(?P<v>\d+(?:\.\d+)?)\s*(?P<u>MM|IN)?\s*(?:NOMINAL BORE|NB|NOMINAL PIPE SIZE|NPS)\b")
+# R11 pipe schedule. 40S and 80S are stainless light-wall variants and are NOT the
+# same as 40 and 80, so the S is part of the value, never stripped.
+_R_SCHEDULE = re.compile(r"\bSCHEDULE\s*(?P<s>\d{1,3}S?)\b")
+# R12 bare nominal size on a piping item: `2 IN BALL VALVE`, `100 MM PIPE`. Only
+# consulted for piping families and only when R10 found nothing, because on a
+# fastener the same shape of text is a thread diameter.
+_R_BARE_SIZE = re.compile(r"\b(?P<v>\d+(?:\.\d+)?)\s*(?P<u>MM|IN)\b")
+
+# Piping vocabularies. Longest phrase first so RING TYPE JOINT is not read as RING.
+VALVE_TYPES: dict[str, str] = {
+    "BALL": "BALL", "GATE": "GATE", "GLOBE": "GLOBE", "CHECK": "CHECK",
+    "BUTTERFLY": "BUTTERFLY", "PLUG": "PLUG", "NEEDLE": "NEEDLE", "DIAPHRAGM": "DIAPHRAGM",
+}
+FLANGE_TYPES: dict[str, str] = {
+    "WELD NECK": "WELD_NECK", "SLIP ON": "SLIP_ON", "SOCKET WELD": "SOCKET_WELD",
+    "LAP JOINT": "LAP_JOINT", "BLIND": "BLIND", "THREADED": "THREADED",
+}
+FACINGS: dict[str, str] = {
+    "RING TYPE JOINT": "RTJ", "RAISED FACE": "RF", "FLAT FACE": "FF",
+    "TONGUE AND GROOVE": "TG",
+}
+CONSTRUCTIONS: dict[str, str] = {
+    "ELECTRIC RESISTANCE WELDED": "ERW", "SEAMLESS": "SEAMLESS", "WELDED": "WELDED",
+    "SPIRAL": "SPIRAL",
+}
+
+
+def _first_term(text: str, table: dict[str, str]) -> tuple[str, str] | None:
+    """Longest matching phrase from a vocabulary, or None."""
+    for term in sorted(table, key=len, reverse=True):
+        if term in text:
+            return table[term], term
+    return None
 
 MATERIAL_TERMS: dict[str, str] = {
     "STAINLESS STEEL": "STAINLESS_STEEL",
@@ -189,10 +264,16 @@ def extract(rec: MaterialRecord, n: Normalised, item_name: str) -> MaterialRecor
         rec.set("MATERIAL", ValueSet.of(mats), "gazetteer:material-v1", ", ".join(mats))
 
     # --- categorical trim ---------------------------------------------------------
-    for term, code in HEAD_STYLES.items():
-        if term in t:
-            rec.set("HEAD_STYLE", Categorical(code, term), "gazetteer:head-v1", term)
-            break
+    family = family_for(item_name) if item_name else ""
+
+    # HEAD_STYLE is a fastener concept. Ungated it also fires on FLANGE, which is
+    # both a head style and an item name, and puts a meaningless row on every
+    # flange record.
+    if family == "fastener":
+        for term, code in HEAD_STYLES.items():
+            if term in t:
+                rec.set("HEAD_STYLE", Categorical(code, term), "gazetteer:head-v1", term)
+                break
     for term, code in SURFACE_TERMS.items():
         if term in t:
             rec.set("SURFACE_TREATMENT", Categorical(code, term), "gazetteer:surface-v1", term)
@@ -209,8 +290,37 @@ def extract(rec: MaterialRecord, n: Normalised, item_name: str) -> MaterialRecor
         rec.set("PRESSURE_CLASS", Categorical(mp.group("p")), "rule:R08", mp.group(0))
     mn = _R_NB.search(t)
     if mn:
-        v, u = _to_mm(float(mn.group("v")), mn.group("u") or "MM")
-        rec.set("NOMINAL_SIZE", Point(Quantity(v, u)), "rule:R10", mn.group(0))
+        v, u, note = _nominal_mm(float(mn.group("v")), mn.group("u") or "MM")
+        rec.set("NOMINAL_SIZE", Point(Quantity(v, u)), "rule:R10", mn.group(0),
+                inferred_unit=note or ("mm" if not mn.group("u") else ""))
+
+    # --- piping families ----------------------------------------------------------
+    if family in ("pipe", "valve", "flange", "gasket"):
+        if not rec.attr("NOMINAL_SIZE"):
+            mz = _R_BARE_SIZE.search(t)
+            if mz:
+                v, u, note = _nominal_mm(float(mz.group("v")), mz.group("u"))
+                rec.set("NOMINAL_SIZE", Point(Quantity(v, u)), "rule:R12", mz.group(0),
+                        inferred_unit=note)
+        msch = _R_SCHEDULE.search(t)
+        if msch:
+            rec.set("SCHEDULE", Categorical(re.sub(r"\s+", "", msch.group("s"))),
+                    "rule:R11", msch.group(0))
+        if family == "valve":
+            hit = _first_term(t, VALVE_TYPES)
+            if hit:
+                rec.set("VALVE_TYPE", Categorical(hit[0], hit[1]), "gazetteer:valve-v1", hit[1])
+        if family == "flange":
+            hit = _first_term(t, FLANGE_TYPES)
+            if hit:
+                rec.set("FLANGE_TYPE", Categorical(hit[0], hit[1]), "gazetteer:flange-v1", hit[1])
+            face = _first_term(t, FACINGS)
+            if face:
+                rec.set("FACING", Categorical(face[0], face[1]), "gazetteer:facing-v1", face[1])
+        if family == "pipe":
+            con = _first_term(t, CONSTRUCTIONS)
+            if con:
+                rec.set("CONSTRUCTION", Categorical(con[0], con[1]), "gazetteer:construction-v1", con[1])
 
     # bearings are identified by reference, not description
     if item_name.startswith("BEARING"):
