@@ -1,0 +1,28 @@
+{
+  // Run and Debug (Cmd/Ctrl+Shift+D). Needs the ms-python.debugpy extension,
+  // which ships with the Python extension.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "SANGAM: debug the engine",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["src.nmc.api:app", "--port", "8001"],
+      // Repo root, so the relative models/ path resolves. --reload is omitted
+      // deliberately: the reloader runs the app in a child process and
+      // breakpoints in the parent never bind.
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "SANGAM: debug the current Python file",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}
