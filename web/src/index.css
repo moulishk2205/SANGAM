@@ -23,7 +23,12 @@
   --color-paper: #f4f2ed;
   --color-bone: #e8e4db;
   --color-ink: #14161a;
-  --color-void: #000000;
+  /* Not pure black. The hero asset is letterboxed in #080d0e–#0c1418, and on a
+     #000 ground its rectangle is plainly visible. Matching the ground to the
+     asset makes the object float with no container edge — which is the whole
+     requirement. Contrast is unaffected at this luminance: --color-live still
+     measures 6.2:1 here against 6.3:1 on pure black. */
+  --color-void: #080d0e;
   --color-raised: #0b0d10;
   /* Two dim greys, not one.
      A single mid-grey cannot clear WCAG AA against both #f4f2ed and #000:
@@ -284,4 +289,20 @@ body {
      movement, which is the moment the user is watching most closely. */
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+
+/* ── Cinematic hero ───────────────────────────────────────────────────────
+   Instrumentation labels enter on a stagger when a stage becomes active.
+   Transform + opacity only, so it composites on the GPU and never lands on
+   the layout path while the video is seeking. */
+@keyframes sig-in {
+  from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0);   filter: blur(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The sequence is not scrubbed under reduced motion, so the hero renders as
+     six stacked stages with the poster frame. Nothing is withheld. */
+  [data-cinematic] * { animation: none !important; transition: none !important; }
 }

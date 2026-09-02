@@ -2,16 +2,8 @@ import { useEffect } from 'react'
 import Lenis from 'lenis'
 import { ScrollTrigger, prefersReducedMotion } from './lib/motion'
 
-import { Thesis } from './sections/Thesis'
-import { Scale } from './sections/Scale'
-import { Trap } from './sections/Trap'
-import { Veto } from './sections/Veto'
-import { Engine } from './sections/Engine'
-import { Unknown } from './sections/Unknown'
-import { Validation } from './sections/Validation'
-import { Disclosure } from './sections/Disclosure'
-import { Foundation } from './sections/Foundation'
-import { Future } from './sections/Future'
+import { Cinematic } from './sections/Cinematic'
+import { Product } from './sections/Product'
 import { Cta } from './sections/Cta'
 import { Platform } from './app/Platform'
 
@@ -45,21 +37,17 @@ export default function App() {
 
   return (
     <>
-      <a href="#scale" className="skip-link">Skip the opening animation</a>
+      <a href="#product" className="skip-link">Skip the opening sequence</a>
 
-      {/* The page's only h1 lives in Thesis: "One bolt. Five names. No code in
-          common." It is the real headline, so there is no second hidden one. */}
       <main id="main">
-        <Thesis />
-        <Scale />
-        <Trap />
-        <Veto />
-        <Engine />
-        <Unknown />
-        <Validation />
-        <Disclosure />
-        <Foundation />
-        <Future />
+        {/* The page's only h1. The cinematic sequence carries h2s per stage, so
+            the document outline is one heading deep rather than six competing
+            top-level headings. */}
+        <h1 className="sr-only">
+          SANGAM — Material Intelligence. From physical material to intelligent decisions.
+        </h1>
+        <Cinematic />
+        <Product />
         <Cta />
       </main>
     </>
