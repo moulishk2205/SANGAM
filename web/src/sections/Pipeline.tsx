@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Shell } from '../components/Primitives'
 import { useGsap, gsap, ScrollTrigger, prefersReducedMotion } from '../lib/motion'
 
@@ -117,6 +117,9 @@ const STEPS: Step[] = [
 export function Pipeline() {
   const trackRef = useRef<HTMLDivElement>(null)
   const reduced = prefersReducedMotion()
+  // Click to light a card up. State, not a ref: it changes on a click, never on
+  // a scroll frame, so it costs one render per press.
+  const [lit, setLit] = useState<string | null>(null)
 
   const root = useGsap(({ root }) => {
     const cards = gsap.utils.toArray<HTMLElement>('.js-step', root)
@@ -145,16 +148,40 @@ export function Pipeline() {
       defaults: { ease: 'none' },
     })
 
+    // MOVE is the crossing; HOLD is the dwell where the card just sits and is
+    // read. The dwell is the fix for the card going dark exactly where it was
+    // most readable: with back-to-back transitions the instant a card landed at
+    // centre the next one began, and the card started dimming while it was
+    // still the one you were looking at. There was no frame where a card was
+    // both centred and lit. Now every card gets HOLD of scroll where nothing
+    // moves at all.
+    const MOVE = 1
+    const HOLD = 0.9
+    const SPAN = MOVE + HOLD
+
     cards.forEach((card, i) => {
       if (i === 0) return
       const prev = cards[i - 1]
-      const at = i - 1
-      // Incoming card crosses the full width…
-      tl.to(card, { xPercent: 0, duration: 1 }, at)
-        // …while the outgoing card drifts at a third of the speed and dims.
-        // Different rates is what makes this read as depth, not as a slideshow.
-        .to(prev, { xPercent: -33, filter: 'brightness(0.35)', duration: 1 }, at)
+      // Dwell first, then cross. Card 0 therefore gets its own read before
+      // anything moves.
+      const at = (i - 1) * SPAN + HOLD
+
+      tl.to(card, {
+        xPercent: 0,
+        // Restored explicitly rather than assumed. On reverse scroll a card
+        // re-enters carrying the dim filter it exited with, and without this it
+        // arrives at centre still dark — the same bug, mirrored.
+        filter: 'brightness(1)',
+        duration: MOVE,
+      }, at)
+        // The outgoing card drifts at a third of the speed and dims. Two rates
+        // is what reads as depth rather than as a slideshow.
+        .to(prev, { xPercent: -33, filter: 'brightness(0.32)', duration: MOVE }, at)
     })
+
+    // A final dwell so the last card is readable before the pin releases,
+    // rather than the section unpinning the moment it arrives.
+    tl.to({}, { duration: HOLD })
   }, [])
 
   // Progress rail, written imperatively — a scrubbed section must never drive
@@ -211,7 +238,10 @@ export function Pipeline() {
       data-pipeline
       ref={root as React.RefObject<HTMLElement>}
       className="relative bg-void"
-      style={{ height: `${STEPS.length * 100}vh` }}
+      // 150vh per stage rather than 100. The dwell needs somewhere to live, and
+      // the crossing itself reads better slower — this is a technical argument
+      // being made, not a carousel being flicked through.
+      style={{ height: `${STEPS.length * 150}vh` }}
     >
       <div className="js-stage h-[100dvh] w-full overflow-hidden flex flex-col justify-center">
         <Shell className="w-full">
@@ -229,16 +259,37 @@ export function Pipeline() {
             >
               <Shell className="w-full">
                 <div
-                  className="relative border border-white/12 bg-[#0b1113]/80 backdrop-blur-[2px]
-                             px-6 py-8 md:px-12 md:py-12 max-w-[900px]
-                             transition-colors duration-500 hover:border-live/45 hover:bg-[#0d1517]/90"
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={lit === s.key}
+                  aria-label={`${s.title}. Press to highlight this step.`}
+                  onClick={() => setLit(lit === s.key ? null : s.key)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setLit(lit === s.key ? null : s.key)
+                    }
+                  }}
+                  className={`relative cursor-pointer border backdrop-blur-[2px]
+                             px-6 py-8 md:px-12 md:py-12 max-w-[900px] outline-none
+                             transition-[border-color,background-color,box-shadow] duration-500
+                             ${lit === s.key
+                               ? 'border-live/70 bg-[#0e181a]/95'
+                               : 'border-white/12 bg-[#0b1113]/80 hover:border-live/45 hover:bg-[#0d1517]/90'}`}
+                  style={
+                    lit === s.key
+                      // Light, not lift. A transform here would fight the scrub
+                      // that is already driving this element's x.
+                      ? { boxShadow: '0 0 0 1px rgba(31,158,134,0.28), 0 0 60px -12px rgba(31,158,134,0.45)' }
+                      : undefined
+                  }
                 >
                   {/* hover: a rule that draws itself across the top edge */}
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute left-0 top-0 h-px w-0 bg-live
+                    className={`pointer-events-none absolute left-0 top-0 h-px bg-live
                                transition-all duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)]
-                               group-hover:w-full"
+                               ${lit === s.key ? 'w-full' : 'w-0 group-hover:w-full'}`}
                   />
                   <div className="flex items-baseline justify-between gap-6">
                     <span className="t-label text-live">
@@ -261,9 +312,11 @@ export function Pipeline() {
                     {s.meta.map((m) => (
                       <span
                         key={m}
-                        className="t-label text-[10px] tracking-[0.14em] text-graphite
-                                   border border-white/10 px-2.5 py-1.5
-                                   transition-colors duration-300 group-hover:border-white/20"
+                        className={`t-label text-[10px] tracking-[0.14em] px-2.5 py-1.5 border
+                                   transition-colors duration-300
+                                   ${lit === s.key
+                                     ? 'text-paper/90 border-live/40'
+                                     : 'text-graphite border-white/10 group-hover:border-white/20'}`}
                       >
                         {m}
                       </span>
