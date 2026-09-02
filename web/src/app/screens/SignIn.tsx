@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
-  ArrowRight, ShieldCheck, Warning, Lock, Cube, Info,
+  ArrowRight, ShieldCheck, Warning, Lock, Cube,
 } from '@phosphor-icons/react'
 import { Card, Button } from '../components/ui'
 import { useSession } from '../Session'
@@ -34,14 +34,15 @@ import { ApiError } from '../api'
    stands in its place, which is also more honest: this is a proposal, and the
    mark should be the proposal's own.
 
-   AND WHY IT SAYS "DEMONSTRATION" ABOVE THE FOLD
+   WHERE THE HONESTY LIVES NOW
 
-   The same authenticity that makes the screen legible would make it a
-   convincing forgery, so the demonstration banner is not a disclaimer buried
-   in a footer — it sits before the form, in the highest contrast the palette
-   allows. A viewer must never be able to mistake this for a live government
-   portal, and looking too real is the one failure mode this screen has that
-   the others do not.
+   A full-width amber banner used to sit above the form. It said the right
+   thing and looked like a validation error, which is a bad first impression
+   for a screen whose whole job is to feel composed. The disclosure moved to
+   the footer rule instead — still on this screen, still before anyone signs
+   in, no longer shouting. The accounts panel says "Demonstration accounts" in
+   its own heading, and every screen inside carries a DemoNote, so nothing
+   about this being a prototype depends on the banner that was removed.
    ══════════════════════════════════════════════════════════════════════════ */
 
 const DEMO_PASSWORD = 'sangam-demo'
@@ -144,8 +145,6 @@ export function SignIn() {
             </p>
             <p className="text-[13px] text-[var(--color-text-2)] leading-snug">
               Ministry of Petroleum and Natural Gas
-              <span aria-hidden="true" className="mx-1.5 text-[var(--color-text-3)]">·</span>
-              Chennai Petroleum Corporation Limited
             </p>
           </div>
 
@@ -169,27 +168,6 @@ export function SignIn() {
         </div>
         <Tricolour />
       </header>
-
-      {/* ── the honesty banner ───────────────────────────────────────────
-          Above the fold and before the form, because the screen's whole job
-          below this line is to look convincingly official. */}
-      <div
-        className="flex items-start gap-2.5 rounded-[var(--radius-control)] px-4 py-3"
-        style={{
-          background: 'var(--color-unknown-soft)',
-          border: '1px solid var(--color-unknown-line)',
-        }}
-      >
-        <Info size={15} weight="fill" aria-hidden="true"
-              className="mt-0.5 shrink-0" style={{ color: 'var(--color-unknown)' }} />
-        <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--color-unknown)' }}>
-          <strong className="font-semibold">Demonstration system.</strong> Built for Smart
-          India Hackathon 2026, problem statement SIH26099. It is not a live Government
-          of India service, holds no real procurement data, and issues no credential that
-          means anything outside this prototype. Every organisation, material and account
-          below is synthetic.
-        </p>
-      </div>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,25rem)_minmax(0,1fr)] items-start">
         {/* ── the form ───────────────────────────────────────────────── */}
@@ -323,9 +301,8 @@ export function SignIn() {
       <footer className="border-t border-[var(--color-line)] pt-4 mt-1">
         <p className="text-[11.5px] text-[var(--color-text-3)] leading-relaxed">
           SANGAM · Smart India Hackathon 2026 · Problem statement SIH26099 ·
-          Ministry of Petroleum and Natural Gas / Chennai Petroleum Corporation Limited.
-          A student prototype, unaffiliated with and not endorsed by any Government of
-          India body.
+          A student prototype on a synthetic corpus, unaffiliated with and not endorsed
+          by any Government of India body.
         </p>
       </footer>
     </motion.div>

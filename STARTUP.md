@@ -1,234 +1,246 @@
-# Running SANGAM
+# STARTUP — how to run SANGAM
 
-**SANGAM — Material Intelligence Platform**
-SIH26099 · Ministry of Petroleum & Natural Gas / Chennai Petroleum Corporation Limited
+Everything you need to start the landing page, the platform, the ML engine and
+the database, from a fresh clone, in VS Code.
 
-This file gets the whole thing running on a machine that has never seen it: the
-landing page, the platform, and the matching engine behind both.
+Written to be self-contained: if you hand this file to another person or another
+AI with no other context, it should be enough to get the whole system running
+and to understand how the pieces fit.
 
-There are **two processes**. Nothing works with only one of them:
-
-| | What it is | Port |
-| --- | --- | --- |
-| **Engine** | FastAPI + the matching pipeline + the embedding model | `8001` |
-| **Web** | Vite dev server — landing page *and* platform | `5173` |
-
-The web app calls the engine at `http://localhost:8001` during development
-(`web/src/app/api.ts`). **Port 8001 is not a suggestion** — start the engine on
-any other port and every screen will show *"Cannot reach the SANGAM engine."*
+> For *why* the system is built this way — the design constraints, the
+> governance model, the data provenance — read `MEMORY.md`.
 
 ---
 
-## 1. Prerequisites
+## 0. TL;DR
 
-| Tool | Version used here | Check |
-| --- | --- | --- |
-| Python | 3.12 | `python3 --version` |
-| Node.js | 20 or newer | `node --version` |
-| npm | ships with Node | `npm --version` |
-| Git | any | `git --version` |
-
-Python 3.11 or 3.13 will work. Below 3.11 will not — the code uses `X | Y`
-type syntax throughout.
-
----
-
-## 2. One-time setup
-
-Run these once, from the repository root. In VS Code: **Terminal → New Terminal**
-(`` Ctrl+` ``), which already opens at the repository root.
-
-### 2.1 Python environment
-
-**macOS / Linux**
+Two servers. Both must be running.
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+# terminal 1 — the engine (Python, port 8001)
+cd /path/to/sih26099
+source .venv/bin/activate
+python -m uvicorn src.nmc.api:app --port 8001 --reload
 ```
 
-**Windows (PowerShell)**
-
-```powershell
-python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -r requirements.txt
+```bash
+# terminal 2 — the web app (Node, port 5173)
+cd /path/to/sih26099/web
+npm run dev
 ```
 
-This installs PyTorch, so expect a few hundred megabytes and a few minutes.
+Then open **http://localhost:5173** — landing page.
+The platform is at **http://localhost:5173/platform**, and it will send you to
+sign-in. Click any demo account card. Password for all of them: `sangam-demo`.
 
-### 2.2 Frontend packages
+---
+
+## 1. What the system is made of
+
+There are **three** runnable things and **one** database. There is no separate
+"ML service" — the model lives inside the Python engine process.
+
+```
+┌──────────────────────────────┐        ┌────────────────────────────────┐
+│  BROWSER  localhost:5173     │        │  ENGINE  localhost:8001        │
+│                              │        │                                │
+│  Vite dev server serves      │  HTTP  │  FastAPI (uvicorn)             │
+│  ONE React bundle:           │ ─────► │    ├── matching engine         │
+│    /          landing page   │ cookie │    │     └── bge-small-en-v1.5 │
+│    /platform  the app        │ ◄───── │    │         (in-process)      │
+│                              │        │    ├── auth + sessions         │
+└──────────────────────────────┘        │    └── SQLAlchemy              │
+                                        └───────────────┬────────────────┘
+                                                        │
+                                                ┌───────▼────────┐
+                                                │  sangam.db     │
+                                                │  SQLite, WAL   │
+                                                └────────────────┘
+```
+
+| Piece | Language | Port | Started by |
+|---|---|---|---|
+| Web app (landing + platform) | TypeScript / React 19 | 5173 | `npm run dev` |
+| Engine (API + ML + DB access) | Python 3.12 | 8001 | `uvicorn` |
+| Embedding model | PyTorch, loaded in-process | — | automatic on engine boot |
+| Database | SQLite file | — | created automatically |
+
+**The landing page and the platform are the same bundle.** `web/src/App.tsx`
+checks `window.location.pathname`: anything starting with `/platform` renders
+the application, everything else renders the scroll landing page. There is no
+second build and no second server.
+
+**The landing page makes zero API calls.** It works with the engine switched
+off. The platform does not — every screen needs the engine.
+
+---
+
+## 2. File structure
+
+```
+sih26099/
+│
+├── src/nmc/                    ◄── THE ENGINE. All Python lives here.
+│   ├── api.py                      FastAPI app — 29 endpoints. Entry point.
+│   ├── authz.py                    roles, sessions, password hashing
+│   ├── service.py                  the write path + decision certificates
+│   ├── relate.py                   relationship-map builder
+│   ├── types.py                    core dataclasses
+│   ├── normalise/text.py           abbreviation gazetteer
+│   ├── extract/                    attribute extraction (regex + templates)
+│   ├── match/                      retrieval, comparison, scoring
+│   │   └── retrieve.py             ◄── loads the embedding model
+│   ├── db/                         SQLAlchemy models, session, seeding
+│   └── demo/corpus.py              synthetic corpus generator
+│
+├── web/                        ◄── THE FRONTEND. All TypeScript lives here.
+│   ├── package.json                npm scripts
+│   ├── vite.config.ts              dev server on port 5173
+│   ├── index.html                  the single HTML entry
+│   └── src/
+│       ├── main.tsx                React root
+│       ├── App.tsx                 landing-vs-platform switch
+│       ├── index.css               design tokens (light + dark)
+│       ├── sections/               landing page sections
+│       ├── components/             landing page primitives
+│       ├── lib/                    GSAP helpers, landing copy
+│       └── app/                    THE PLATFORM
+│           ├── Platform.tsx        shell + route table
+│           ├── RequireAuth.tsx     the auth gate
+│           ├── Session.tsx         who is signed in
+│           ├── api.ts              typed HTTP client
+│           ├── components/         shared UI
+│           └── screens/            one file per screen
+│
+├── models/bge-small-en-v1.5/   ◄── THE MODEL. 128 MB, downloaded, not trained.
+├── scripts/evaluate.py             the measurement harness
+├── tests/                          24 pytest tests
+├── migrations/                     Alembic
+├── .vscode/                        tasks, debug configs, settings
+├── requirements.txt                Python dependencies
+├── sangam.db                       SQLite database (gitignored, auto-created)
+├── MEMORY.md                       full project context and design rationale
+└── STARTUP.md                      this file
+```
+
+---
+
+## 3. First-time setup
+
+Do this once. Skip to §4 if you have already done it.
+
+### 3.1 Prerequisites
+
+| Need | Version used here | Check |
+|---|---|---|
+| Python | 3.12.14 | `python3 --version` |
+| Node.js | 25.9.0 (any ≥ 20 works) | `node -v` |
+| npm | 11.12.1 | `npm -v` |
+| git | any | `git --version` |
+
+### 3.2 Python environment
+
+From the repository root:
+
+```bash
+python3.12 -m venv .venv
+```
+
+```bash
+source .venv/bin/activate
+```
+
+On Windows PowerShell the activate line is `.\.venv\Scripts\Activate.ps1`.
+
+```bash
+pip install --upgrade pip && pip install -r requirements.txt
+```
+
+This pulls **torch** and **sentence-transformers**, which are large — expect a
+few hundred MB and several minutes on a first run.
+
+### 3.3 Node dependencies
 
 ```bash
 cd web && npm install
 ```
 
-### 2.3 Tell VS Code which Python to use
+### 3.4 The embedding model
 
-`Cmd/Ctrl+Shift+P` → **Python: Select Interpreter** → choose the one inside
-`.venv`. It should read something like `Python 3.12.14 ('.venv': venv)`.
+The engine looks for `models/bge-small-en-v1.5` **relative to the working
+directory**. If it is missing, `sentence-transformers` downloads it from Hugging
+Face on first boot — which needs the network and adds ~30 s.
 
-`.vscode/settings.json` already points at `.venv`, so VS Code usually picks it
-up on its own. If imports show red squiggles, this is why — set it manually.
-
-### 2.4 Install the recommended extensions
-
-VS Code will offer them when you open the folder (they are listed in
-`.vscode/extensions.json`). Or `Cmd/Ctrl+Shift+P` → **Extensions: Show
-Recommended Extensions**.
-
-Python · Pylance · Ruff · Tailwind CSS IntelliSense · ESLint · Prettier
-
----
-
-## 3. The ML model — read this before your first run
-
-The dense retrieval channel uses **`bge-small-en-v1.5`** (BAAI, ~130 MB). It is
-a **pre-trained, off-the-shelf model, used unmodified. Nothing in this project
-was trained or fine-tuned.**
-
-`models/` is in `.gitignore`, so a fresh clone does **not** have it. On first
-start the engine looks for `models/bge-small-en-v1.5` and, not finding it,
-downloads it from Hugging Face. That needs internet and takes a minute.
-
-**Two things to know:**
-
-**The path is relative.** `src/nmc/match/retrieve.py` looks for
-`models/bge-small-en-v1.5` relative to the *current working directory*. Start
-the engine from anywhere but the repository root and it will quietly re-download
-the model instead of using your copy. Always start it from the repo root.
-
-**Pre-download it before a demo.** Venue wifi fails at the worst moment. Do this
-once, while you still have a good connection:
+To pre-download it (do this before an offline demo), from the repository root:
 
 ```bash
 python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('BAAI/bge-small-en-v1.5').save('models/bge-small-en-v1.5')"
 ```
 
-After that the engine starts fully offline. In VS Code this is also available as
-**Run Task → SANGAM: pre-download the embedding model**.
+> **This is the single most common startup mistake:** starting uvicorn from a
+> directory other than the repository root. The relative path then misses, and
+> the model is silently re-downloaded every boot. Always start the engine from
+> the repo root.
 
-If the model cannot be loaded at all, the engine still starts — it degrades to
-lexical-only retrieval and prints `dense channel: off`. The demo will work but
-the accuracy numbers will not match the ones we report.
+### 3.5 The database
 
----
+**Nothing to do.** On first boot the engine creates `sangam.db`, builds the
+schema, and seeds it: 4 organisations, 5 users, 600 canonical materials, 1,800
+source records, 1,800 mappings (22 of them left `PROPOSED` so the review queue
+has work in it).
 
-## 3b. The database
-
-State lives in a real database now, not in memory. `DATABASE_URL` selects the
-backend; the default is a SQLite file, `sangam.db`, beside the repository.
-
-SQLite is deliberate. A demo that cannot start without a Postgres server is a
-demo that fails at the venue, and nothing in the schema is SQLite-specific —
-point `DATABASE_URL` at Postgres and the same migrations apply.
-
-**You do not need to do anything.** On first start the engine creates the schema
-and seeds the demonstration corpus (~1 second), then reads from storage on every
-start after that. The file is gitignored, so a fresh clone builds its own.
-
-To run the migration explicitly, or to inspect where the schema stands:
-
-```bash
-python -m alembic upgrade head
-```
-
-To start over from an empty database, delete the file and restart:
-
-```bash
-rm -f sangam.db && python -m alembic upgrade head
-```
-
-### Demo accounts
-
-Seeded with hashed passwords. The password for all of them is `sangam-demo`,
-and these are demonstration credentials — never reuse them anywhere.
-
-| Email | Role | Organisation | Scope |
-| --- | --- | --- | --- |
-| `reviewer.a@sangam.gov.in` | Reviewer | CPSE-A | fastener, pipe, flange · certified PRESSURE |
-| `reviewer.b@sangam.gov.in` | Reviewer | CPSE-B | fastener |
-| `steward@sangam.gov.in` | Steward | CPSE-A | every family, CPSE-A only |
-| `requester.a@sangam.gov.in` | Requester | CPSE-A | may propose, never approve |
-| `admin@sangam.gov.in` | Admin | CPSE-A | users and organisations |
-
-Authority is a pair, not a role: **organisation × commodity family**. A CPSE-B
-reviewer cannot approve a CPSE-A mapping, and no role — administrator included —
-is exempt from that. It is the guarantee the whole product rests on.
-
-**The platform requires a session.** There is no anonymous view: "Open SANGAM"
-on the landing page goes to the sign-in screen, every `/platform/*` route is
-behind a gate, and the API refuses too — only `/api/health` and the three auth
-endpoints answer without a cookie. Gating just the UI would have left the whole
-catalogue and the matching engine answering on `:8001` to anyone who knew the
-path.
-
-Sign in from `/platform/signin`. The five accounts are on that page as one-click
-cards, so a reviewer never has to come back here to find a password. Signing in
-returns you to whatever you were trying to reach.
-
-`/platform/account` states your authority in full — organisation, commodity
-families, class certifications, and what each of those causes the server to
-refuse. It is the screen that explains a refusal before you hit it.
-
-### The review queue is seeded on purpose
-
-Seeding holds back 22 of the 1,800 mappings as `PROPOSED` rather than
-`APPROVED`, so the review queue has work in it on a fresh database. An empty
-queue would be the honest result of a fully-adjudicated corpus and a useless
-demonstration — the reviewer would sign in, read "nothing waiting for you", and
-never reach the part of the product that matters.
-
-The 22 are chosen, not sampled, so that each account teaches a different rule:
-
-| Sign in as | What you see | What happens |
-| --- | --- | --- |
-| S. Nair | 12 items, CPSE-A only | The 3 CPSE-A valves never appear — `valve` is not one of her families |
-| S. Nair → a fastener | GENERAL class | Approves, writes a certificate, chain length moves |
-| S. Nair → a flange | PRESSURE class | Approves — she holds PRESSURE — but only with a written justification |
-| S. Nair → a pipe | FIRED class | Refused: she holds PRESSURE, not FIRED |
-| M. Banerjee | 5 items, CPSE-B only | Nair's 12 are invisible, not greyed out |
-| M. Banerjee → a CPSE-A id | — | Refused on the organisation rule |
-| K. Rao (requester) | — | Refused on role, before any scope is considered |
-
-Every refusal message is shown verbatim next to the item rather than as a toast,
-because the reason is the interesting output. Approvals write a real row: restart
-the engine and the decision, its certificate and its hash chain are all still
-there. To get the queue back, delete `sangam.db` and restart the engine.
+Seeding is idempotent — it no-ops on every subsequent boot.
 
 ---
 
-## 4. Starting it
+## 4. Starting it in VS Code
 
-### The VS Code way (one command)
+### 4.1 The one-command way (recommended)
 
-`Cmd/Ctrl+Shift+P` → **Tasks: Run Task** → **SANGAM: start everything**
+`Cmd/Ctrl + Shift + P` → **Tasks: Run Task** → **SANGAM: start everything**
 
-That launches both servers in their own terminal panes. Since both are
-long-running servers, neither ever prints "done" — that is correct, not a hang.
+Or just press `Cmd/Ctrl + Shift + B` — it is the default build task.
 
-`Cmd/Ctrl+Shift+B` runs the same task, since it is the default build task.
+That opens both servers in their own dedicated terminal panes. **Neither ever
+prints "done"** — they are long-running servers. That is correct, not a hang.
 
-### The manual way (two terminals)
+Other tasks in the same menu:
 
-You need **two** terminals. In VS Code, click the split icon in the terminal
-panel, or `Cmd/Ctrl+Shift+5`.
+| Task | What it does |
+|---|---|
+| `SANGAM: engine (API on :8001)` | just the backend |
+| `SANGAM: web (Vite dev server)` | just the frontend |
+| `SANGAM: run engine tests` | `pytest tests/ -q` |
+| `SANGAM: evaluate the engine` | prints the real accuracy numbers |
+| `SANGAM: pre-download the embedding model` | for offline demos |
+
+The tasks use `${command:python.interpreterPath}`, so VS Code uses whichever
+interpreter you selected — see §4.3.
+
+### 4.2 The manual way (two terminals)
+
+Split the VS Code terminal with the split icon, or `` Cmd/Ctrl + Shift + 5 ``.
 
 **Terminal 1 — the engine.** From the repository root:
 
 ```bash
-python -m uvicorn src.nmc.api:app --port 8001 --reload
+source .venv/bin/activate && python -m uvicorn src.nmc.api:app --port 8001 --reload
 ```
 
-Wait for both of these lines before touching the browser:
+Wait for this line before using the platform:
 
 ```
-[api] indexed 1800 records into 600 canonical materials in 4,202 ms (dense channel: on)
-INFO:     Application startup complete.
+[api] storage sqlite · indexed 1,800 records in 4,750 ms (dense channel: on) · seeded 1,800 records
+INFO:     Uvicorn running on http://127.0.0.1:8001
 ```
 
-The index is built at startup, which takes roughly 4 seconds. Until you see
-`Application startup complete`, the API returns `503 engine still indexing`.
+The `· seeded 1,800 records` suffix appears only on a boot that actually seeded
+— a first run, or the first run after you deleted the database. On every later
+boot the line ends at the closing bracket.
 
-`dense channel: on` confirms the embedding model loaded. If it says `off`, see
-§3.
+`dense channel: on` means the embedding model loaded. `off` means it did not,
+and the engine has degraded to lexical-only retrieval — accuracy drops but it
+still runs. Boot takes ~25 s: most of it is building the index.
 
 **Terminal 2 — the web app:**
 
@@ -236,156 +248,228 @@ The index is built at startup, which takes roughly 4 seconds. Until you see
 cd web && npm run dev
 ```
 
-Vite prints the URL it chose. It is normally `http://localhost:5173`; if that
-port is busy it will pick another and say so. Ports 5173, 5174, 4173 and 4174
-are all pre-approved in the engine's CORS settings — anything else will be
-blocked by the browser.
+```
+VITE ready in 300 ms
+➜  Local: http://localhost:5173/
+```
+
+### 4.3 Selecting the Python interpreter
+
+`Cmd/Ctrl + Shift + P` → **Python: Select Interpreter** → choose the one inside
+`.venv`. Without this the tasks and the debugger use the system Python, which
+does not have the dependencies.
+
+### 4.4 Debugging
+
+`.vscode/launch.json` has ready configurations — press `F5`:
+
+- **SANGAM: debug the engine** — uvicorn under the debugger, breakpoints work
+- **SANGAM: debug the current Python file**
+
+### 4.5 Recommended extensions
+
+VS Code will offer these from `.vscode/extensions.json`: Python, Pylance, Ruff,
+Tailwind CSS IntelliSense, oxlint.
 
 ---
 
-## 5. Where to go
+## 5. Signing in
 
-| URL | What it is |
-| --- | --- |
-| `http://localhost:5173/` | **Landing page** — the scroll narrative. Start here. |
-| `http://localhost:5173/platform` | **Home** — the console. Type a material, or pick an example. |
-| `http://localhost:5173/platform/analyse` | **Analyse** — the full pipeline, stage by stage, with evidence. |
-| `http://localhost:5173/platform/explorer` | **Explorer** — the standardized catalogue. |
-| `http://localhost:5173/platform/visualization` | **Visualization** — the relationship map. |
-| `http://localhost:8001/docs` | Interactive API docs (FastAPI's built-in Swagger UI). |
+Open **http://localhost:5173**, scroll to the end, click **Open SANGAM**. Or go
+straight to **http://localhost:5173/platform**.
 
-The landing page's **Open SANGAM** button leads into the platform.
+Either way you land on the sign-in screen. **There is no anonymous access** —
+every route and every API endpoint except `/api/health` and the auth endpoints
+requires a session.
+
+Five demo accounts are on the screen as one-click cards. Password for all:
+**`sangam-demo`**
+
+| Email | Role | Org | What it demonstrates |
+|---|---|---|---|
+| `reviewer.a@sangam.gov.in` | Reviewer | CPSE-A | Approves fastener/pipe/flange. Certified PRESSURE, so the FIRED pipes in her queue are refused. |
+| `reviewer.b@sangam.gov.in` | Reviewer | CPSE-B | Cannot touch CPSE-A at all. Her queue contains different items. |
+| `steward@sangam.gov.in` | Steward | CPSE-A | Above commodity families — still bound by organisation and safety class. |
+| `requester.a@sangam.gov.in` | Requester | CPSE-A | Every approval attempt is refused on role. |
+| `admin@sangam.gov.in` | Admin | CPSE-A | Administers accounts, and is still not exempt from the org rule. |
+
+`/platform/account` shows the signed-in user's full authority and, more usefully,
+exactly what the server will refuse them.
 
 ---
 
-## 6. Check it actually works
+## 6. A five-minute demo path
 
-Paste this into a third terminal. Every line should say `200`:
+1. **Analyse** — paste `MS HEX BOLT M10 X 75`. Watch it normalise the text,
+   extract the attributes, retrieve candidates, then score them.
+2. **This one query is the whole argument.** It returns eight candidates: three
+   genuine matches, and five scored **exactly 0.0000** despite text similarity
+   above 0.95 — each vetoed on a single critical attribute:
+
+   | Candidate | Text similarity | Score | Vetoed because |
+   |---|---|---|---|
+   | `BOLT HEX MS M10*75` | 0.9904 | **0.9986** | — genuine match |
+   | `MS HEX BOLT M12 X 75` | 0.9898 | **0.0000** | thread Ø 10 mm vs 12 mm |
+   | `MS HEX BOLT M10 X 50` | 0.9711 | **0.0000** | length 75 mm vs 50 mm |
+   | `CS HEX BOLT M10X75` | 0.9631 | **0.0000** | MILD_STEEL vs CARBON_STEEL |
+   | `SS HEX BOLT M10X75` | 0.9585 | **0.0000** | MILD_STEEL vs STAINLESS_STEEL |
+
+   A similarity-threshold matcher would have merged all five. Every one is a
+   different physical part. The veto is a gate (`0` or `1`), not a penalty —
+   which is why the score is zero and not merely reduced. Open the evidence
+   table on any row to see the per-attribute AGREE/DISAGREE/UNKNOWN breakdown.
+3. **Explorer** — browse the 600 canonical identities.
+4. **Relationships** — the relationship map for one material.
+5. **Review** (as S. Nair) — approve a fastener. Note the certificate count move.
+6. Try approving a **FIRED** pipe in the same queue. Refused, with the reason.
+7. **Ledger** — open the certificate you just wrote. Evidence frozen, versions
+   recorded, hash chained to its predecessor.
+8. Sign out, sign in as **M. Banerjee**, and see that CPSE-A's items are not
+   merely greyed out — they are absent.
+
+---
+
+## 7. Verifying it works
 
 ```bash
-for p in /api/health /api/stats /api/samples; do printf "%-16s " "$p"; curl -s -o /dev/null -w "%{http_code}\n" "localhost:8001$p"; done
+python scripts/evaluate.py
 ```
 
-Then prove the engine really runs — this is the demo's central claim, that a
-disagreement on a critical attribute is a veto and not a penalty:
+Real measured numbers on the synthetic corpus — nothing estimated:
+
+```
+retrieval    recall@1 96.33%   recall@10 97.67%
+decision     precision 99.44%   recall 98.69%   F1 99.06%
+veto         2,392 candidates vetoed on a critical attribute,
+             all 2,392 with text similarity >= 0.85
+latency      p50 13.0 ms   p95 16.9 ms
+```
 
 ```bash
-curl -s -X POST localhost:8001/api/match -H 'Content-Type: application/json' -d '{"description":"SS HEX BOLT M10 X 50","top_k":5}' | python -m json.tool | head -40
+python -m pytest tests/ -q
 ```
 
-The first three come back `MATCH` — the same bolt written three ways. The rest
-come back `DISTINCT` with `confidence` **exactly `0.0`** and a `veto_reason`
-naming the attribute that stopped them:
-
-```
-MATCH     1.0     SS HEX BOLT M10X50
-MATCH     0.9988  BOLT HEX SS M10*50
-MATCH     0.9941  STAINLESS STEEL HEXAGONAL BOLT 10MM X 50MM
-DISTINCT  0.0     SS HEX BOLT M10X25    Length: 50 mm vs 25 mm — differs by 25 mm
-DISTINCT  0.0     MS HEX BOLT M10 X 50  Material: STAINLESS_STEEL vs MILD_STEEL
-```
-
-Zero, not merely low. That is the whole architecture in one column: the veto is
-a multiplier of zero, so no amount of text similarity can recover a pair whose
-specification disagrees. The corpus is generated from a fixed seed, so you will
-see these same rows.
-
-### In the browser
-
-1. Open `/platform`, click the **Ball valve** example. It fills the field and
-   does **not** run — press **Analyse material** yourself.
-2. The Analyse screen walks the seven pipeline stages and shows the extracted
-   attributes, candidates and evidence.
-3. Open **Visualization**. Three teal dots sit at the top; the rejected
-   candidates hang below as hollow rings with lines falling into the gate.
+Expect `24 passed`.
 
 ---
 
-## 7. Useful commands
+## 8. The database
 
-| What | Command |
-| --- | --- |
-| Engine tests | `python -m pytest tests/ -q` |
-| Full evaluation (recall, F1, veto, latency) | `python scripts/evaluate.py` |
-| Frontend type-check | `cd web && npx tsc --noEmit` |
-| Frontend lint | `cd web && npm run lint` |
+SQLite by default. The path and backend come from `DATABASE_URL`; unset, it is a
+file beside the repository.
+
+```bash
+# inspect it
+sqlite3 sangam.db ".tables"
+sqlite3 sangam.db "select status, count(*) from mappings group by 1;"
+```
+
+**Reset to a clean seeded state** — do this if the review queue is empty because
+you approved everything:
+
+```bash
+rm -f sangam.db sangam.db-wal sangam.db-shm
+```
+
+Then restart the engine; it reseeds automatically.
+
+**Point at Postgres instead** (the schema is portable, same migrations):
+
+```bash
+export DATABASE_URL="postgresql+psycopg://user:pass@localhost/sangam"
+```
+
+**Migrations** (Alembic; `create_all` on boot is a convenience for fresh
+checkouts, `alembic` is the real path):
+
+```bash
+alembic upgrade head
+```
+
+---
+
+## 9. Ports, and what to do when one is taken
+
+| Port | Service |
+|---|---|
+| 5173 | Vite dev server |
+| 8001 | FastAPI engine |
+
+The engine's CORS allowlist is **exactly** `5173`, `5174`, `4173`, `4174`, and
+it sends credentials — so the web app must be on one of those, or the session
+cookie is rejected and every call fails as anonymous.
+
+If Vite says the port is in use, do not let it pick another one silently. Find
+and kill the process:
+
+```bash
+lsof -ti:5173 | xargs kill
+```
+
+```bash
+lsof -ti:8001 | xargs kill
+```
+
+On Windows: `netstat -ano | findstr :5173` then `taskkill /PID <pid> /F`.
+
+---
+
+## 10. Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Every screen says "Could not reach the engine" | engine not running | start terminal 1; check `curl localhost:8001/api/health` |
+| Signed in, then everything 401s | web app on a port outside the CORS allowlist | run Vite on 5173 |
+| `dense channel: off` in the boot line | `sentence-transformers`/`torch` missing, or model path missed | reinstall requirements; start uvicorn from the repo root |
+| Boot re-downloads the model every time | uvicorn started from the wrong directory | `cd` to the repository root first |
+| Review queue is empty | you approved all 22 seeded proposals | delete `sangam.db*` and restart |
+| `ModuleNotFoundError: nmc` | venv not activated, or wrong cwd | `source .venv/bin/activate`, run from repo root |
+| Landing page scroll feels broken | GSAP/Lenis need a real reload after a hot edit | hard-refresh the tab |
+| Sign-in accepts nothing | database not seeded | check the boot log; delete `sangam.db*` and restart |
+
+---
+
+## 11. Building for production
+
+```bash
+cd web && npm run build
+```
+
+Output lands in `web/dist/`. `npm run preview` serves it on 4173, which is in
+the CORS allowlist.
+
+The engine in production drops `--reload`:
+
+```bash
+python -m uvicorn src.nmc.api:app --host 0.0.0.0 --port 8001
+```
+
+> Not deployment-ready as it stands: no CSRF tokens, no rate limiting, no HTTPS
+> enforcement, and the demo credentials are published in the source. It is a
+> hackathon prototype and `MEMORY.md` §12 lists what is missing.
+
+---
+
+## 12. Quick command reference
+
+| Goal | Command |
+|---|---|
+| Start engine | `python -m uvicorn src.nmc.api:app --port 8001 --reload` |
+| Start web app | `cd web && npm run dev` |
+| Run tests | `python -m pytest tests/ -q` |
+| Measure accuracy | `python scripts/evaluate.py` |
+| Lexical-only comparison | `python scripts/evaluate.py --no-embeddings` |
+| Typecheck the frontend | `cd web && npx tsc --noEmit` |
+| Lint the frontend | `cd web && npm run lint` |
+| Lint Python | `ruff check src/ tests/ scripts/` — see the note below |
 | Production build | `cd web && npm run build` |
-| Preview the production build | `cd web && npm run preview` |
+| Reset the database | `rm -f sangam.db sangam.db-wal sangam.db-shm` |
+| Pre-download the model | see §3.4 |
+| Free port 5173 / 8001 | `lsof -ti:5173 \| xargs kill` |
 
-The evaluation script takes about a minute and prints the numbers we quote:
-recall@1 96.33%, F1 99.06%, p95 latency 14.5 ms, and the veto counts.
-
-In VS Code, tests are also available under the beaker icon in the sidebar, and
-`Run Task → SANGAM: evaluate the engine`.
-
----
-
-## 8. When it does not work
-
-**Every screen says "Cannot reach the SANGAM engine."**
-The engine is not running, or not on 8001. Check Terminal 1 for
-`Application startup complete`. Confirm with `curl localhost:8001/api/health`.
-
-**`ModuleNotFoundError: No module named 'src'`**
-You are not in the repository root. `cd` there and try again — `conftest.py` is
-what makes `src` importable, and it only applies from the root.
-
-**`ModuleNotFoundError: No module named 'fastapi'` (or torch, numpy…)**
-The venv is not active, or dependencies were never installed. Re-run §2.1. In
-VS Code, check the interpreter shown in the bottom-right status bar.
-
-**`[Errno 48] Address already in use` / `EADDRINUSE`**
-Something is already on that port — often an older copy of this app.
-
-```bash
-lsof -ti:8001 | xargs kill -9
-```
-
-On Windows: `netstat -ano | findstr :8001`, then `taskkill /PID <pid> /F`.
-
-**The engine prints `dense channel: off`**
-`sentence-transformers` or `torch` failed to import, or the model could not be
-fetched. The app still runs on lexical retrieval alone, but the reported
-accuracy assumes the dense channel. See §3.
-
-**Browser console shows a CORS error**
-Vite is on a port the engine does not allow. Use 5173 or 5174, or add yours to
-`allow_origins` in `src/nmc/api.py`.
-
-**First engine start hangs for a minute**
-It is downloading the model. Watch the terminal for progress. See §3 to avoid
-this on demo day.
-
-**Breakpoints in the engine never hit**
-Use **Run and Debug → SANGAM: debug the engine**, not `--reload`. The reloader
-runs the app in a child process, so breakpoints set in the parent never bind.
-
----
-
-## 9. What the demo data actually is
-
-State this plainly if anyone asks; it is in the product UI too.
-
-- The corpus is **1,800 synthetic records** collapsing to **600 canonical
-  materials** across **4 invented organisations**. It is generated from
-  specifications we define, so the labels are correct by construction.
-- The organisation names and material codes are **invented**. They are not the
-  records of ONGC, IOCL, NTPC, CPCL or any real enterprise.
-- **No model was trained.** `bge-small-en-v1.5` is used off the shelf,
-  unmodified. There is no training code in this repository.
-- FLIS (the public US Defense Logistics Agency catalogue) informed the
-  *attribute structure* and item-name vocabulary. Its **values are not used**,
-  and FLIS is not CPSE data.
-- `confidence` is an **uncalibrated ranking score, not a probability.** The API
-  carries `calibrated: false` on every response so nothing downstream can
-  quietly relabel it.
-
-Full provenance: `docs/DATA_PROVENANCE.md`. Engine design: `docs/SPRINT1-ENGINE.md`.
-
----
-
-## 10. Stopping
-
-`Ctrl+C` in each terminal. Or, in VS Code, the bin icon on each terminal pane.
-Nothing is persisted between runs — the index is rebuilt at every startup — so
-there is no cleanup to do.
+> **On `ruff`:** the project has no `pyproject.toml`, so ruff runs with its full
+> default rule set and currently reports ~89 style nits (`EXE001` shebangs,
+> `F541` f-strings without placeholders, line lengths). None are defects —
+> Python style has never been gated here. The gates that *are* enforced and
+> currently clean are `pytest` (24 passed), `tsc --noEmit`, and `npm run lint`
+> (0 errors).
