@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   CheckCircle, XCircle, ShieldWarning, Prohibit, ArrowClockwise, Info,
@@ -34,8 +34,7 @@ import { useSession } from '../Session'
 type Outcome = { kind: 'approved' | 'rejected' | 'refused'; message: string }
 
 export function Review() {
-  const { user, loading: sessionLoading } = useSession()
-  const nav = useNavigate()
+  const { user } = useSession()
 
   const [items, setItems] = useState<QueueItem[]>([])
   const [scope, setScope] = useState<{ org: string; commodity: string[] } | null>(null)
@@ -54,12 +53,14 @@ export function Review() {
       .finally(() => setLoading(false))
   }, [])
 
+  // No redirect here any more: RequireAuth wraps this route, so by the time
+  // the screen renders there is a user. The hand-rolled bounce that used to
+  // live here also hardcoded its own `next`, which meant arriving from
+  // anywhere else lost the destination.
   useEffect(() => {
-    if (sessionLoading) return
-    if (!user) { nav('/platform/signin?next=/platform/review', { replace: true }); return }
     load()
     ledger.verify().then((v) => setChain({ ok: v.ok, checked: v.checked })).catch(() => {})
-  }, [user, sessionLoading, load, nav])
+  }, [load])
 
   const act = async (item: QueueItem, kind: 'approve' | 'reject') => {
     const note = (notes[item.mapping_id] || '').trim()
@@ -85,7 +86,7 @@ export function Review() {
     }
   }
 
-  if (sessionLoading || !user) return <ListSkeleton rows={4} />
+  if (!user) return <ListSkeleton rows={4} />   // unreachable behind the gate; satisfies the type
 
   return (
     <div className="grid gap-6">

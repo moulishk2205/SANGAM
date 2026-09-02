@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { auth, type CurrentUser, type Role } from './api'
+import { auth, SESSION_LOST, type CurrentUser, type Role } from './api'
 
 /* ══════════════════════════════════════════════════════════════════════════
    Who is signed in, available everywhere.
@@ -37,6 +37,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       .then((r) => setUser(r.user))
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
+  }, [])
+
+  // A session can end while the tab is open — expiry, revocation, or the engine
+  // restarted against a fresh database. api.ts raises this on any 401, and
+  // clearing the user here is what makes the route gate fire instead of leaving
+  // a signed-in-looking shell around screens that can no longer load.
+  useEffect(() => {
+    const onLost = () => setUser(null)
+    window.addEventListener(SESSION_LOST, onLost)
+    return () => window.removeEventListener(SESSION_LOST, onLost)
   }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {

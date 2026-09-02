@@ -104,3 +104,31 @@ export function DetailSkeleton() {
     </Region>
   )
 }
+
+/**
+ * The whole-screen wait, used by the auth gate.
+ *
+ * The gate cannot know which screen is arriving, so this mirrors the one shape
+ * every screen shares: a title, a standfirst, and a body. It exists so the gate
+ * has something honest to render while /api/auth/me is still answering —
+ * rendering nothing reads as a broken build, and rendering the login form would
+ * be a lie that gets corrected a frame later.
+ */
+export function ScreenSkeleton() {
+  return (
+    <Region label="Checking your session">
+      <div className="grid gap-6">
+        <div>
+          <Bar w="46%" h={28} />
+          <Bar w="72%" h={13} className="mt-4" />
+          <Bar w="58%" h={13} className="mt-2" />
+        </div>
+        <div className="card p-5 grid gap-3.5">
+          {[0, 1, 2, 3].map((i) => (
+            <Bar key={i} w={`${88 - i * 11}%`} h={13} />
+          ))}
+        </div>
+      </div>
+    </Region>
+  )
+}

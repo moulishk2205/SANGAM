@@ -30,7 +30,10 @@ export function Cta() {
 
           <div className="js-cta flex flex-col sm:flex-row sm:items-center gap-8">
             <a
-              href="/platform"
+              // Sign-in, not the platform: there is no anonymous view any more,
+              // and landing on a screen that immediately redirects reads as a
+              // glitch. Send people to the door rather than bouncing them off it.
+              href="/platform/signin"
               className="group inline-flex items-center gap-4 border border-paper/70 px-8 py-5 text-paper
                          transition-colors duration-200 hover:bg-paper hover:text-ink
                          focus-visible:bg-paper focus-visible:text-ink"

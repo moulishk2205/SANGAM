@@ -17,7 +17,9 @@ import { NotFound } from './screens/NotFound'
 import { SignIn } from './screens/SignIn'
 import { Review } from './screens/Review'
 import { Ledger } from './screens/Ledger'
+import { Account } from './screens/Account'
 import { SessionProvider, useSession } from './Session'
+import { RequireAuth } from './RequireAuth'
 
 /**
  * Application shell.
@@ -89,6 +91,9 @@ function Rail({ canReview }: { canReview: boolean }) {
   )
 }
 
+/** Alias, so the route table below reads as a table rather than as JSX. */
+const G = RequireAuth
+
 function Chrome() {
   const loc = useLocation()
   const { user, signOut } = useSession()
@@ -123,14 +128,31 @@ function Chrome() {
           <div className="flex items-center gap-3 sm:gap-4">
             {user ? (
               <div className="flex items-center gap-2.5">
-                <span className="hidden sm:block text-right leading-tight">
-                  <span className="block text-[12.5px] font-semibold text-[var(--color-text)]">
-                    {user.name}
+                {/* The chip was inert, which wasted the one piece of chrome a
+                    person actually looks at to answer "who am I signed in as,
+                    and what may I do?". It is now the way to the answer. */}
+                <Link
+                  to="/platform/account"
+                  className="press flex items-center gap-2.5 rounded-[var(--radius-control)]
+                             px-2 py-1 -mx-2 hover:bg-[var(--color-surface-3)]"
+                  title="Your account and authority"
+                >
+                  <span className="hidden sm:block text-right leading-tight">
+                    <span className="block text-[12.5px] font-semibold text-[var(--color-text)]">
+                      {user.name}
+                    </span>
+                    <span className="block text-[11px] text-[var(--color-text-3)]">
+                      {user.role} · {user.org_id}
+                    </span>
                   </span>
-                  <span className="block text-[11px] text-[var(--color-text-3)]">
-                    {user.role} · {user.org_id}
+                  <span
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-bold"
+                    style={{ background: 'var(--color-brand-soft)', color: 'var(--color-brand)' }}
+                    aria-hidden="true"
+                  >
+                    {user.name.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
                   </span>
-                </span>
+                </Link>
                 <button
                   onClick={() => signOut()}
                   title="Sign out"
@@ -142,13 +164,13 @@ function Chrome() {
                   <SignOut size={15} weight="bold" aria-hidden="true" />
                 </button>
               </div>
-            ) : (
+            ) : loc.pathname !== '/platform/signin' ? (
               <Link to="/platform/signin"
                     className="press link inline-flex items-center gap-1.5 text-[13px] font-medium">
                 <SignInIcon size={13} weight="bold" aria-hidden="true" />
                 Sign in
               </Link>
-            )}
+            ) : null}
             <ThemeToggle />
             <a href="/" className="press link text-[13px] font-medium inline-flex items-center gap-1.5">
               <ArrowLeft size={13} weight="bold" aria-hidden="true" />
@@ -157,13 +179,20 @@ function Chrome() {
           </div>
         </header>
 
-        <div className="grid lg:grid-cols-[190px_minmax(0,1fr)] gap-6 lg:gap-8 py-6 min-w-0">
+        {/* Signed out there is exactly one reachable route, so the rail would be
+            a column of links that all bounce back to this screen. It collapses
+            to a single column instead, which also gives the sign-in screen the
+            full width its two panels want. */}
+        <div className={`grid gap-6 lg:gap-8 py-6 min-w-0 ${
+          user ? 'lg:grid-cols-[190px_minmax(0,1fr)]' : ''}`}>
           {/* min-w-0: a grid child defaults to min-width:auto, so without this the
               aside sizes to its content and the rail's overflow-x-auto has
               nothing to clip against — the page scrolls sideways instead. */}
-          <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
-            <Rail canReview={canReview} />
-          </aside>
+          {user && (
+            <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
+              <Rail canReview={canReview} />
+            </aside>
+          )}
 
           <main id="content" className="min-w-0 pb-16">
             {/* No AnimatePresence here, deliberately. `mode="wait"` holds the
@@ -182,17 +211,22 @@ function Chrome() {
               transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
             >
               <Routes location={loc}>
-                <Route path="/platform" element={<Home />} />
-                <Route path="/platform/analyse" element={<Analyse />} />
-                <Route path="/platform/material/:nmc" element={<Canonical />} />
-                <Route path="/platform/explorer" element={<Explorer />} />
-                <Route path="/platform/visualization" element={<Visualize />} />
+                {/* The only ungated route. Everything else is wrapped, and the
+                    server refuses anyway — see RequireAuth. */}
                 <Route path="/platform/signin" element={<SignIn />} />
-                <Route path="/platform/review" element={<Review />} />
-                <Route path="/platform/ledger" element={<Ledger />} />
-                {/* Every unmatched path previously rendered the shell with an
-                    empty content area, which reads as a broken build. */}
-                <Route path="*" element={<NotFound />} />
+
+                <Route path="/platform" element={<G><Home /></G>} />
+                <Route path="/platform/analyse" element={<G><Analyse /></G>} />
+                <Route path="/platform/material/:nmc" element={<G><Canonical /></G>} />
+                <Route path="/platform/explorer" element={<G><Explorer /></G>} />
+                <Route path="/platform/visualization" element={<G><Visualize /></G>} />
+                <Route path="/platform/review" element={<G><Review /></G>} />
+                <Route path="/platform/ledger" element={<G><Ledger /></G>} />
+                <Route path="/platform/account" element={<G><Account /></G>} />
+
+                {/* Gated too. An unknown path should not be a way to learn
+                    whether this deployment exists without signing in. */}
+                <Route path="*" element={<G><NotFound /></G>} />
               </Routes>
             </motion.div>
           </main>

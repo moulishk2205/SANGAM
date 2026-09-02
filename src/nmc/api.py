@@ -136,6 +136,19 @@ def optional_user(request: Request, db: DbSession = Depends(get_session)) -> Use
     return resolve_session(db, request.cookies.get(SESSION_COOKIE))
 
 
+# WHAT IS PUBLIC, AND WHY SO LITTLE
+#
+# Exactly four endpoints answer without a session: the two auth verbs, `me`
+# (which must be able to say "nobody"), and `health` (a liveness probe has to
+# work before anyone signs in).
+#
+# Everything else — including the reads — requires one. The catalogue is
+# another organisation's material master, the analyser is the engine itself,
+# and the ledger is an internal audit record; none of those are public
+# information. Gating only the UI would have left all of it answering on
+# :8001 to anyone who knew the path, which is a curtain, not a control.
+
+
 def _user_out(u: User, db: DbSession) -> dict:
     org = db.get(Organisation, u.org_id)
     return {
@@ -198,7 +211,8 @@ def health(db: DbSession = Depends(get_session)) -> dict:
 
 
 @app.get("/api/stats")
-def stats(db: DbSession = Depends(get_session)) -> dict:
+def stats(db: DbSession = Depends(get_session),
+          _u: User = Depends(current_user)) -> dict:
     c = service.counts(db)
     cross = db.scalar(
         select(func.count()).select_from(
@@ -240,7 +254,8 @@ def _canonical_for_record(db: DbSession, record_id: str) -> str | None:
 
 
 @app.post("/api/match")
-def match(req: MatchRequest, db: DbSession = Depends(get_session)) -> dict:
+def match(req: MatchRequest, db: DbSession = Depends(get_session),
+          _u: User = Depends(current_user)) -> dict:
     eng = matching_engine()
     t0 = time.perf_counter()
     probe, results = eng.check_before_create(req.description, top_k=req.top_k)
@@ -266,7 +281,8 @@ def match(req: MatchRequest, db: DbSession = Depends(get_session)) -> dict:
 
 
 @app.post("/api/visualization")
-def visualization(req: MapRequest, db: DbSession = Depends(get_session)) -> dict:
+def visualization(req: MapRequest, db: DbSession = Depends(get_session),
+                  _u: User = Depends(current_user)) -> dict:
     eng = matching_engine()
     by_record = {
         r.source_record_id: r.canonical_id
@@ -284,6 +300,7 @@ def canonical_list(
     q: str = "", limit: int = Query(default=40, ge=1, le=200),
     cursor: str | None = None, item_class: str | None = None,
     db: DbSession = Depends(get_session),
+    _u: User = Depends(current_user),
 ) -> dict:
     """
     Cursor pagination, not offset.
@@ -339,7 +356,8 @@ def canonical_list(
 
 
 @app.get("/api/canonical/{nmc_id}")
-def canonical_detail(nmc_id: str, db: DbSession = Depends(get_session)) -> dict:
+def canonical_detail(nmc_id: str, db: DbSession = Depends(get_session),
+                     _u: User = Depends(current_user)) -> dict:
     rec = db.get(CanonicalMaterial, nmc_id.upper())
     if rec is None:
         fail(404, "not_found", f"No canonical material {nmc_id}.")
@@ -371,7 +389,8 @@ def canonical_detail(nmc_id: str, db: DbSession = Depends(get_session)) -> dict:
 
 
 @app.get("/api/material/{record_id}")
-def material(record_id: str, db: DbSession = Depends(get_session)) -> dict:
+def material(record_id: str, db: DbSession = Depends(get_session),
+             _u: User = Depends(current_user)) -> dict:
     rec = db.get(SourceRecord, record_id)
     if rec is None:
         fail(404, "not_found", f"No record {record_id}.")
@@ -387,7 +406,8 @@ def material(record_id: str, db: DbSession = Depends(get_session)) -> dict:
 
 
 @app.get("/api/material/{record_id}/history")
-def material_history(record_id: str, db: DbSession = Depends(get_session)) -> dict:
+def material_history(record_id: str, db: DbSession = Depends(get_session),
+                     _u: User = Depends(current_user)) -> dict:
     """Every claim ever made on this code, with its effective range."""
     if db.get(SourceRecord, record_id) is None:
         fail(404, "not_found", f"No record {record_id}.")
@@ -403,7 +423,8 @@ def material_history(record_id: str, db: DbSession = Depends(get_session)) -> di
 
 
 @app.get("/api/material/{record_id}/as-of")
-def material_as_of(record_id: str, at: str, db: DbSession = Depends(get_session)) -> dict:
+def material_as_of(record_id: str, at: str, db: DbSession = Depends(get_session),
+                   _u: User = Depends(current_user)) -> dict:
     """What this code meant at a moment. The vintage query."""
     try:
         when = datetime.fromisoformat(at)
@@ -556,7 +577,8 @@ def split(canonical_id: str, req: SplitRequest, db: DbSession = Depends(get_sess
 @app.get("/api/decisions")
 def decisions(limit: int = Query(default=50, ge=1, le=200),
               mapping_id: str | None = None,
-              db: DbSession = Depends(get_session)) -> dict:
+              db: DbSession = Depends(get_session),
+              _u: User = Depends(current_user)) -> dict:
     stmt = select(Decision).order_by(Decision.seq.desc()).limit(limit)
     if mapping_id:
         stmt = select(Decision).where(Decision.mapping_id == mapping_id).order_by(Decision.seq.desc())
@@ -572,7 +594,8 @@ def decisions(limit: int = Query(default=50, ge=1, le=200),
 
 
 @app.get("/api/decisions/{decision_id}")
-def decision_certificate(decision_id: str, db: DbSession = Depends(get_session)) -> dict:
+def decision_certificate(decision_id: str, db: DbSession = Depends(get_session),
+                         _u: User = Depends(current_user)) -> dict:
     """The certificate, served verbatim — including the evidence as frozen."""
     # Not db.get(): Decision's primary key is `seq`, because SQLite only
     # auto-increments an INTEGER PRIMARY KEY. `id` is the public handle and
@@ -597,7 +620,8 @@ def decision_certificate(decision_id: str, db: DbSession = Depends(get_session))
 
 
 @app.get("/api/decisions/chain/verify")
-def verify_chain(db: DbSession = Depends(get_session)) -> dict:
+def verify_chain(db: DbSession = Depends(get_session),
+                 _u: User = Depends(current_user)) -> dict:
     r = service.verify_chain(db)
     return {**r, "note": "Tamper-evident only. The chain proves internal "
                          "consistency; it becomes evidence when the head is "
@@ -680,7 +704,8 @@ async def ingest(file: UploadFile, db: DbSession = Depends(get_session),
 
 
 @app.get("/api/ingest/{job_id}")
-def ingest_status(job_id: str, db: DbSession = Depends(get_session)) -> dict:
+def ingest_status(job_id: str, db: DbSession = Depends(get_session),
+                  _u: User = Depends(current_user)) -> dict:
     j = db.get(IngestJob, job_id)
     if j is None:
         fail(404, "not_found", f"No job {job_id}.")
@@ -745,7 +770,8 @@ _SAMPLES: list[dict] = [
 
 
 @app.get("/api/samples")
-def samples(db: DbSession = Depends(get_session)) -> dict:
+def samples(db: DbSession = Depends(get_session),
+            _u: User = Depends(current_user)) -> dict:
     eng = matching_engine()
     usable = []
     for s in _SAMPLES:

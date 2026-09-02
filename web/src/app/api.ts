@@ -87,6 +87,21 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Fired when the server says the session is gone.
+ *
+ * A session can end while a tab sits open — it expires, it is revoked, the
+ * engine is restarted against a fresh database. The next call then 401s, and
+ * without this the screen would render "Sign in to continue." as though it
+ * were a data error, on a page whose nav still shows the signed-in user. The
+ * event lets SessionProvider clear its user, which makes the route gate fire
+ * and lands the person on the sign-in screen with their destination kept.
+ *
+ * A CustomEvent rather than an import: api.ts is imported *by* Session.tsx, so
+ * calling into it directly would be a cycle.
+ */
+export const SESSION_LOST = 'sangam:session-lost'
+
 async function unwrap<T>(r: Response): Promise<T> {
   if (r.ok) return r.json()
   let code = 'error'
@@ -97,6 +112,15 @@ async function unwrap<T>(r: Response): Promise<T> {
     if (d?.code) code = d.code
     if (d?.message) message = d.message
   } catch { /* a non-JSON error body; the status line stands */ }
+
+  // 401 means the session is gone, not that this particular request was bad.
+  // `me` is exempt: it answers 200 with a null user when signed out, so a 401
+  // from it would be something else entirely — and re-broadcasting during the
+  // provider's own boot call would loop.
+  if (r.status === 401 && !r.url.endsWith('/api/auth/me')) {
+    window.dispatchEvent(new CustomEvent(SESSION_LOST))
+  }
+
   throw new ApiError(r.status, code, message)
 }
 

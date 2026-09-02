@@ -153,8 +153,20 @@ Authority is a pair, not a role: **organisation × commodity family**. A CPSE-B
 reviewer cannot approve a CPSE-A mapping, and no role — administrator included —
 is exempt from that. It is the guarantee the whole product rests on.
 
+**The platform requires a session.** There is no anonymous view: "Open SANGAM"
+on the landing page goes to the sign-in screen, every `/platform/*` route is
+behind a gate, and the API refuses too — only `/api/health` and the three auth
+endpoints answer without a cookie. Gating just the UI would have left the whole
+catalogue and the matching engine answering on `:8001` to anyone who knew the
+path.
+
 Sign in from `/platform/signin`. The five accounts are on that page as one-click
-cards, so a reviewer never has to come back here to find a password.
+cards, so a reviewer never has to come back here to find a password. Signing in
+returns you to whatever you were trying to reach.
+
+`/platform/account` states your authority in full — organisation, commodity
+families, class certifications, and what each of those causes the server to
+refuse. It is the screen that explains a refusal before you hit it.
 
 ### The review queue is seeded on purpose
 
