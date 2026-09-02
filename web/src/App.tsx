@@ -3,6 +3,7 @@ import Lenis from 'lenis'
 import { ScrollTrigger, prefersReducedMotion } from './lib/motion'
 
 import { Cinematic } from './sections/Cinematic'
+import { Pipeline } from './sections/Pipeline'
 import { Product } from './sections/Product'
 import { Cta } from './sections/Cta'
 import { Platform } from './app/Platform'
@@ -47,6 +48,7 @@ export default function App() {
           SANGAM — Material Intelligence. From physical material to intelligent decisions.
         </h1>
         <Cinematic />
+        <Pipeline />
         <Product />
         <Cta />
       </main>
