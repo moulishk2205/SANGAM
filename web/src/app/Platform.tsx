@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, NavLink, Link, useLocation } from 'react-
 import { AnimatePresence, motion } from 'motion/react'
 import { House, MagnifyingGlass, Cube, ArrowLeft, Stack, Graph } from '@phosphor-icons/react'
 import './tokens.css'
+import { ThemeToggle } from './components/ThemeToggle'
 
 import { Home } from './screens/Home'
 import { Analyse } from './screens/Analyse'
@@ -104,10 +105,13 @@ function Chrome() {
             </span>
           </Link>
 
-          <a href="/" className="press link text-[13px] font-medium inline-flex items-center gap-1.5">
-            <ArrowLeft size={13} weight="bold" aria-hidden="true" />
-            Back to the story
-          </a>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <a href="/" className="press link text-[13px] font-medium inline-flex items-center gap-1.5">
+              <ArrowLeft size={13} weight="bold" aria-hidden="true" />
+              <span className="hidden sm:inline">Back to the story</span>
+            </a>
+          </div>
         </header>
 
         <div className="grid lg:grid-cols-[190px_minmax(0,1fr)] gap-6 lg:gap-8 py-6 min-w-0">
@@ -154,7 +158,9 @@ export function Platform() {
   // the application so overscroll and the area behind the layout match.
   useEffect(() => {
     const prev = document.body.style.background
-    document.body.style.background = '#f4f2ee'
+    // Follows the token so overscroll and the area behind the layout match the
+    // active theme, instead of staying the light ground forever.
+    document.body.style.background = 'var(--color-bg)'
     return () => { document.body.style.background = prev }
   }, [])
 

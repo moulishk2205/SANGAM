@@ -231,9 +231,24 @@ body {
 }
 
 /* ── Application surface tokens ───────────────────────────────────────────
-   Tailwind only processes @theme in the file that imports tailwindcss, so
-   the application tokens live here rather than beside the app CSS. */
-@theme {
+   A plain :root block, NOT @theme — and that distinction is load-bearing.
+
+   Tailwind v4 resolves `text-[var(--color-text-2)]` statically when the token
+   is one it knows from @theme: it emits the literal colour, not a var()
+   reference. The utility then cannot respond to a runtime theme change, which
+   is exactly what happened here — both themes rendered correctly on a fresh
+   load, and switching live repainted the backgrounds while every piece of text
+   kept its old colour.
+
+   Declared outside @theme, the token is opaque to Tailwind, so it emits
+   `color: var(--color-text-2)` verbatim and the dark overrides below take
+   effect at runtime.
+
+   Safe because nothing uses the generated short utilities (bg-brand,
+   text-surface) for these — all 178 call sites use the arbitrary var() form.
+   The landing page's @theme block above is untouched; it *does* rely on
+   generated utilities like bg-void and text-paper. */
+:root {
   /* Grounds. Warm rather than cold: #F8FAFC and its neighbours read as
      "generated admin panel", and a warm ground reads as paper. */
   --color-bg: #f4f2ee;
@@ -256,6 +271,11 @@ body {
      identity, so the meaning is continuous across the two surfaces. */
   --color-brand: #0b6e5b;
   --color-brand-hover: #095546;
+  /* The label colour that sits ON the accent. Not always white: a light accent
+     on a dark ground takes dark ink. Measured — white on the dark theme's
+     #35b394 is 2.62:1, which fails AA even for large text, while #16181b on it
+     is 6.80:1. */
+  --color-on-brand: #ffffff;
   --color-brand-soft: #e2f0ec;
   --color-brand-line: #a9d4c9;
 
@@ -285,6 +305,23 @@ body {
   --color-neutral-ambient: #f7f7f5;
   --color-agree-row: #f6fbf9;
   --color-disagree-row: #fdf4f2;
+
+  /* The relationship map's gate bar is a filled rect with labels on it. It used
+     --color-text for the fill and literal white for the labels, which inverts to
+     white-on-white the moment the theme flips. Its own pair instead. */
+  --color-gate: #1b1d1f;
+  --color-gate-ink: #ffffff;
+
+  /* Shadow and highlight tints. On a light ground a card is lifted by a warm
+     shadow and a white top highlight; on a dark ground the shadow does almost
+     nothing and the lift has to come from a faint light edge instead. */
+  --shadow-tint: 58, 52, 40;
+  --shadow-strength: 1;
+  --card-highlight: rgba(255, 255, 255, 0.9);
+  --card-highlight-hover: rgba(255, 255, 255, 0.95);
+  --spotlight-tint: 11, 110, 91;
+  --spotlight-strength: 0.07;
+  --chrome-hairline: rgba(58, 52, 40, 0.06);
 
   --font-ui: "Public Sans Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
@@ -332,4 +369,137 @@ body {
   /* The sequence is not scrubbed under reduced motion, so the hero renders as
      six stacked stages with the poster frame. Nothing is withheld. */
   [data-cinematic] * { animation: none !important; transition: none !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DARK — the application surface only. The landing page has its own dark
+   ground and is not themed.
+
+   Not black. #000 makes every surface above it look like a floating rectangle,
+   because there is no shade left below to separate against — you lose a whole
+   step of the elevation scale before you start. The ground is #16181b: a dark
+   neutral pulled very slightly cool and green so it sits under the teal accent
+   without the two fighting. Surfaces then step up 1e2125 / 24282c / 2b2f34,
+   which is how depth is expressed here, since on a dark ground a drop shadow is
+   nearly invisible and cannot do that job.
+
+   Every accent is lightened, because the light theme's values were chosen for
+   contrast against white and are far too dark here. All fifteen foreground /
+   background pairs were measured against WCAG AA; the lowest is 5.23:1.
+
+   Three states, deliberately: an explicit choice stamps data-theme, and the
+   default "system" setting stamps nothing — so the media query has to carry the
+   un-stamped case, guarded so an explicit light choice still beats a dark OS.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #16181b;
+    --color-surface: #1e2125;
+    --color-surface-2: #24282c;
+    --color-surface-3: #2b2f34;
+    --color-line: #33383e;
+    --color-line-strong: #474d54;
+
+    --color-text: #e9ecef;      /* 15.0:1 on the ground */
+    --color-text-2: #b4bcc4;    /*  8.4:1 on a surface  */
+    --color-text-3: #949da6;    /*  5.9:1 on a surface  */
+
+    --color-brand: #35b394;        /* 6.2:1 on a surface */
+    --color-brand-hover: #46c7a7;
+    --color-brand-soft: #12302a;
+    --color-brand-line: #1f5a4c;
+    --color-on-brand: #16181b;     /* white here is 2.62:1 — it fails */
+
+    --color-distinct: #e8785f;
+    --color-distinct-soft: #38201c;
+    --color-distinct-line: #6b3a2f;
+
+    --color-unknown: #dcb15f;
+    --color-unknown-soft: #332a19;
+    --color-unknown-line: #5f4f2b;
+
+    --color-info: #6cb0ea;
+    --color-info-soft: #16273a;
+    --color-info-line: #2d4d6e;
+
+    --color-brand-ambient: #141f1d;
+    --color-distinct-ambient: #221a18;
+    --color-neutral-ambient: #1e2124;
+    --color-agree-row: #141f1c;
+    --color-disagree-row: #211a18;
+
+    --color-gate: #cdd3d9;
+    --color-gate-ink: #16181b;
+
+    /* A dark ground swallows shadow, so the lift comes from a light top edge
+       instead — the same trick, inverted. */
+    --shadow-tint: 0, 0, 0;
+    --shadow-strength: 2.6;
+    --card-highlight: rgba(255, 255, 255, 0.055);
+    --card-highlight-hover: rgba(255, 255, 255, 0.085);
+    --spotlight-tint: 53, 179, 148;
+    --spotlight-strength: 0.10;
+    --chrome-hairline: rgba(255, 255, 255, 0.07);
+
+    --material-chrome: rgba(22, 24, 27, 0.72);
+    --material-raised: rgba(30, 33, 37, 0.66);
+    --material-edge: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* The explicit choice, in both directions. Repeated rather than shared with the
+   media query above: a selector list containing an invalid or unsupported
+   selector invalidates the whole rule in some engines, and these two must never
+   fail together. */
+:root[data-theme="dark"] {
+  --color-bg: #16181b;
+  --color-surface: #1e2125;
+  --color-surface-2: #24282c;
+  --color-surface-3: #2b2f34;
+  --color-line: #33383e;
+  --color-line-strong: #474d54;
+
+  --color-text: #e9ecef;
+  --color-text-2: #b4bcc4;
+  --color-text-3: #949da6;
+
+  --color-brand: #35b394;
+  --color-brand-hover: #46c7a7;
+  --color-brand-soft: #12302a;
+  --color-brand-line: #1f5a4c;
+  --color-on-brand: #16181b;
+
+  --color-distinct: #e8785f;
+  --color-distinct-soft: #38201c;
+  --color-distinct-line: #6b3a2f;
+
+  --color-unknown: #dcb15f;
+  --color-unknown-soft: #332a19;
+  --color-unknown-line: #5f4f2b;
+
+  --color-info: #6cb0ea;
+  --color-info-soft: #16273a;
+  --color-info-line: #2d4d6e;
+
+  --color-brand-ambient: #141f1d;
+  --color-distinct-ambient: #221a18;
+  --color-neutral-ambient: #1e2124;
+  --color-agree-row: #141f1c;
+  --color-disagree-row: #211a18;
+
+  --color-gate: #cdd3d9;
+  --color-gate-ink: #16181b;
+
+  --shadow-tint: 0, 0, 0;
+  --shadow-strength: 2.6;
+  --card-highlight: rgba(255, 255, 255, 0.055);
+  --card-highlight-hover: rgba(255, 255, 255, 0.085);
+  --spotlight-tint: 53, 179, 148;
+  --spotlight-strength: 0.10;
+  --chrome-hairline: rgba(255, 255, 255, 0.07);
+
+  --material-chrome: rgba(22, 24, 27, 0.72);
+  --material-raised: rgba(30, 33, 37, 0.66);
+  --material-edge: rgba(255, 255, 255, 0.08);
 }

@@ -133,7 +133,9 @@ export function Button({
   variant?: 'primary' | 'ghost' | 'quiet'; disabled?: boolean; className?: string; icon?: ReactNode
 }) {
   const styles = {
-    primary: 'text-white border-transparent',
+    // Not text-white: on the dark theme the accent lightens and white on it
+    // measures 2.62:1. The token carries dark ink there instead.
+    primary: 'border-transparent',
     ghost: 'bg-[var(--color-surface)] text-[var(--color-text)] border-[var(--color-line-strong)] hover:bg-[var(--color-surface-2)]',
     quiet: 'bg-transparent text-[var(--color-text-2)] border-transparent hover:bg-[var(--color-surface-3)]',
   }[variant]
@@ -142,7 +144,9 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      style={variant === 'primary' ? { background: 'var(--color-brand)' } : undefined}
+      style={variant === 'primary'
+        ? { background: 'var(--color-brand)', color: 'var(--color-on-brand)' }
+        : undefined}
       className={`press inline-flex items-center justify-center gap-2 rounded-lg border
                   px-4 py-2.5 text-[14px] font-semibold cursor-pointer ${styles} ${className}`}
       onMouseEnter={(e) => {

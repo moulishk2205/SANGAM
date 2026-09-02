@@ -11,6 +11,16 @@
       content="SANGAM resolves the many ways organisations describe the same material into one canonical material identity, and keeps every original code attached to it. SIH26099 — Ministry of Petroleum and Natural Gas / CPCL."
     />
   </head>
+  <script>
+    // Runs before first paint. Without it, an explicit choice is applied by
+    // React after mount and the page flashes the other theme first. Wrapped
+    // because localStorage throws outright in some privacy modes rather than
+    // returning null, and a theme preference is not worth a blank page.
+    try {
+      var t = localStorage.getItem('sangam-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  </script>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

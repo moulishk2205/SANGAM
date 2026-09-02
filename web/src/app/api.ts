@@ -103,10 +103,29 @@ export const api = {
 }
 
 /** Friendlier message than "Failed to fetch" when the engine is not running. */
+/**
+ * Friendlier message than the browser's own when the engine is not running.
+ *
+ * Every engine browser words this differently, and matching only Chrome's
+ * phrasing meant Safari and the WebKit-based preview showed a bare "Load
+ * failed" — which tells the reader nothing and looks like the app is broken
+ * rather than like a service is down.
+ */
+const OFFLINE = [
+  'Failed to fetch',      // Chrome, Edge
+  'NetworkError',         // Firefox
+  'Load failed',          // Safari / WebKit
+  'network error',        // some WebKit builds, lowercased
+  'ERR_CONNECTION',       // Chromium surfacing the net error directly
+  'Could not connect',
+]
+
 export function readableError(e: unknown): string {
   const m = e instanceof Error ? e.message : String(e)
-  return m.includes('Failed to fetch') || m.includes('NetworkError')
-    ? 'Cannot reach the SANGAM engine. Start it with: uvicorn src.nmc.api:app --port 8001'
+  const offline = OFFLINE.some((s) => m.toLowerCase().includes(s.toLowerCase()))
+  return offline
+    ? 'Cannot reach the SANGAM engine. Start it from the repository root with: '
+      + 'python -m uvicorn src.nmc.api:app --port 8001'
     : m
 }
 

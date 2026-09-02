@@ -246,7 +246,7 @@ function Field({ map, nodes, selected, onSelect, reduced }: FieldProps) {
 
         {/* ── the gate ─────────────────────────────────────────────────────── */}
         <rect x={PAD_L} y={gateTop} width={W - PAD_L - PAD_R} height={GATE_H}
-              fill="var(--color-text)" rx={3} />
+              fill="var(--color-gate)" rx={3} />
         {gates.map((g, i) => {
           const inner = Math.max(W - PAD_L - PAD_R, 10)
           const cw = inner / Math.max(gates.length, 1)
@@ -255,16 +255,16 @@ function Field({ map, nodes, selected, onSelect, reduced }: FieldProps) {
             <g key={g.code}>
               {i > 0 && (
                 <line x1={gx} x2={gx} y1={gateTop + 5} y2={gateTop + GATE_H - 5}
-                      stroke="#ffffff" strokeOpacity={0.22} strokeWidth={1} />
+                      stroke="var(--color-gate-ink)" strokeOpacity={0.22} strokeWidth={1} />
               )}
               <text x={gx + cw / 2} y={gateTop + GATE_H / 2 - 2} textAnchor="middle"
-                    className="mono" fontSize={narrow ? 8 : 9} fill="#ffffff" fillOpacity={0.72}
+                    className="mono" fontSize={narrow ? 8 : 9} fill="var(--color-gate-ink)" fillOpacity={0.72}
                     letterSpacing="0.04em">
                 {(narrow ? g.label.split(' ')[0] : g.label).toUpperCase()}
               </text>
               <text x={gx + cw / 2} y={gateTop + GATE_H / 2 + 10} textAnchor="middle"
                     className="mono" fontSize={narrow ? 9 : 10.5}
-                    fill={g.count ? 'var(--color-distinct-line)' : '#ffffff'}
+                    fill={g.count ? 'var(--color-distinct)' : 'var(--color-gate-ink)'}
                     fillOpacity={g.count ? 1 : 0.4}>
                 {g.count}{g.also > 0 ? ` +${g.also}` : ''}
               </text>
@@ -823,7 +823,7 @@ export function Visualize() {
                         className="press mono px-2.5 py-1 text-[12px] cursor-pointer border-r
                                    border-[var(--color-line)] last:border-r-0"
                         style={topK === c
-                          ? { background: 'var(--color-brand)', color: '#fff' }
+                          ? { background: 'var(--color-brand)', color: 'var(--color-on-brand)' }
                           : { background: 'var(--color-surface)', color: 'var(--color-text-2)' }}>
                         {c}
                       </button>
