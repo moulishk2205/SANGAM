@@ -201,7 +201,7 @@ export function Review() {
                       <p className="mono text-[11.5px] text-[var(--color-text-3)] mt-1.5">
                         {it.confidence.toFixed(4)}
                       </p>
-                      <p className="text-[10.5px] text-[var(--color-text-3)]">uncalibrated</p>
+                      <p className="text-[10.5px] text-[var(--color-text-3)]">engine score</p>
                     </div>
                   </div>
 

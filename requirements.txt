@@ -19,6 +19,12 @@ pint>=0.24
 numpy>=2.0
 scipy>=1.14
 
+# --- learned scoring ---
+# The fitted scorer and its isotonic calibrator (src/nmc/ml/). scikit-learn
+# arrives transitively with sentence-transformers, but this is a direct import
+# now and a transitive pin is not a dependency declaration.
+scikit-learn>=1.4
+
 # --- ML ---
 # The dense retrieval channel. Imported lazily in src/nmc/match/retrieve.py so
 # that a missing install degrades to lexical-only rather than failing to boot —

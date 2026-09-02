@@ -25,7 +25,7 @@ export type Arithmetic = {
 export type Candidate = {
   candidate_material: string; record_id: string; nmc_id: string | null
   org: string; org_code: string; provenance: string
-  decision: Decision; confidence: number; calibrated: false; raw_score: number
+  decision: Decision; confidence: number; calibrated: boolean; raw_score: number
   arithmetic: Arithmetic
   semantic_score: number; lexical_score: number; attribute_agreement: number
   critical_veto: boolean; veto_reason: string
@@ -41,6 +41,8 @@ export type MatchResult = {
   query: string; normalised: string; item_name: string | null
   attributes: ExtractedAttribute[]; candidates: Candidate[]
   elapsed_ms: number; model_version: string
+  /** True when the engine has a fitted scorer loaded, so confidence is a probability. */
+  calibrated: boolean
 }
 
 export type CanonicalSummary = {
@@ -255,7 +257,7 @@ export type MaterialMap = {
   facets: Record<'family' | 'item_name' | 'org' | 'relation', { value: string; count: number }[]>
   relations: Record<Relation, { label: string; meaning: string; tone: string }>
   thresholds: { match: number; near: number; review: number }
-  dense_channel: boolean; elapsed_ms: number; model_version: string; calibrated: false
+  dense_channel: boolean; elapsed_ms: number; model_version: string; calibrated: boolean
 }
 
 

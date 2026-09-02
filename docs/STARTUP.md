@@ -90,6 +90,7 @@ sih26099/
 │   ├── extract/                    attribute extraction (regex + templates)
 │   ├── match/                      retrieval, comparison, scoring
 │   │   └── retrieve.py             ◄── loads the embedding model
+│   ├── ml/                         the learned scorer and its calibrator
 │   ├── db/                         SQLAlchemy models, session, seeding
 │   └── demo/corpus.py              synthetic corpus generator
 │
@@ -113,8 +114,12 @@ sih26099/
 │           └── screens/            one file per screen
 │
 ├── models/bge-small-en-v1.5/   ◄── THE MODEL. 128 MB, downloaded, not trained.
-├── scripts/evaluate.py             the measurement harness
-├── tests/                          24 pytest tests
+├── scripts/
+│   ├── evaluate.py                 the measurement harness
+│   └── train_scorer.py             fits the scorer + calibrator, prints the report
+├── models/scorer/scorer-v1.json    THE FITTED MODEL. 17 KB of named coefficients,
+│                                   committed — unlike the 128 MB embedding model
+├── tests/                          39 pytest tests
 ├── migrations/                     Alembic
 ├── .vscode/                        tasks, debug configs, settings
 ├── requirements.txt                Python dependencies
@@ -335,6 +340,9 @@ exactly what the server will refuse them.
 python scripts/evaluate.py
 ```
 
+The header names which scorer produced the numbers — the fitted one if
+`models/scorer/scorer-v1.json` is present, the deterministic weights otherwise.
+
 Real measured numbers on the synthetic corpus — nothing estimated:
 
 ```
@@ -349,7 +357,25 @@ latency      p50 13.0 ms   p95 16.9 ms
 python -m pytest tests/ -q
 ```
 
-Expect `24 passed`.
+Expect `39 passed`.
+
+### Retraining the scorer
+
+The fitted model ships in the repository, so this is only needed after changing
+the features, the corpus, or the extraction rules:
+
+```bash
+python scripts/train_scorer.py
+```
+
+Takes about 50 seconds and prints the full evaluation — learned vs hand-tuned,
+the calibration reliability table, the veto audit, and a token-dropout stress
+test. It writes `models/scorer/scorer-v1.json`.
+
+`--no-save` evaluates without overwriting the artifact. Delete the artifact and
+the engine falls back to its deterministic weights and reports
+`calibrated: false` everywhere — nothing breaks, the numbers just stop being
+probabilities.
 
 ---
 
@@ -458,6 +484,7 @@ python -m uvicorn src.nmc.api:app --host 0.0.0.0 --port 8001
 | Start web app | `cd web && npm run dev` |
 | Run tests | `python -m pytest tests/ -q` |
 | Measure accuracy | `python scripts/evaluate.py` |
+| Retrain the scorer | `python scripts/train_scorer.py` |
 | Lexical-only comparison | `python scripts/evaluate.py --no-embeddings` |
 | Typecheck the frontend | `cd web && npx tsc --noEmit` |
 | Lint the frontend | `cd web && npm run lint` |

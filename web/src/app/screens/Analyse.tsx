@@ -544,10 +544,17 @@ export function Analyse() {
           )}
 
           <DemoNote>
-            The score is an uncalibrated ranking score, not a probability. A candidate rejected by
-            the critical attribute check scores exactly zero regardless of how similar the text is,
-            which is why a rejected candidate can carry a higher semantic similarity than an
-            accepted one.
+            {res?.calibrated
+              ? 'The score is a calibrated probability: across the held-out set, candidates '
+                + 'scored near 0.9 were the same material about nine times in ten. It comes from '
+                + 'a logistic model over twelve comparison features with an isotonic calibrator '
+                + 'fitted on data the model never trained on.'
+              : 'The score is an uncalibrated ranking score, not a probability — no fitted '
+                + 'scorer is loaded, so the engine is using its deterministic weights.'}
+            {' '}A candidate rejected by the critical attribute check scores exactly zero
+            regardless of how similar the text is, which is why a rejected candidate can carry
+            a higher semantic similarity than an accepted one. The veto is applied after
+            scoring and is not one of the model's features.
           </DemoNote>
         </>
       )}

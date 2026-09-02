@@ -111,6 +111,21 @@ def main() -> None:
     f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0.0
     latencies.sort()
 
+    sc = engine.scorer
+    print("\nSCORER")
+    if sc is None:
+        print("  deterministic   score = veto x (0.85*attr + 0.15*text), bands 0.86/0.70/0.45")
+        print("  uncalibrated — the number is a ranking score, not a probability")
+    else:
+        print(f"  learned         {sc.metadata.get('engine_version', 'scorer-v1')}, "
+              f"{len(sc.feature_names)} features, isotonic-calibrated")
+        print(f"  bands           MATCH {sc.thresholds['match']:.2f} / "
+              f"NEAR {sc.thresholds['near']:.2f} / REVIEW {sc.thresholds['review']:.2f} "
+              f"on a calibrated probability")
+        print("  the DECISION block below scores the MATCH band only, so it reflects a")
+        print("  deliberately conservative auto-assert threshold — see WHERE THE TRUE")
+        print("  MATCHES LAND in scripts/train_scorer.py for the rest")
+
     print(f"\nRETRIEVAL   ({n} probes, pool 50)")
     for k in sorted(hits_at):
         print(f"  recall@{k:<3} {hits_at[k]/n*100:6.2f}%")

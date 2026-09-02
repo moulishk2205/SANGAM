@@ -190,7 +190,9 @@ export function Home() {
           <DemoNote>
             Demonstration corpus: {health.corpus}. Organisation names and material codes are
             invented and are not the records of any real enterprise. Scores shown throughout are
-            uncalibrated ranking scores, not probabilities.
+            {health.calibrated
+              ? ' calibrated probabilities from a fitted scorer, measured on a held-out split.'
+              : ' uncalibrated ranking scores, not probabilities.'}
           </DemoNote>
         </Card>
       )}

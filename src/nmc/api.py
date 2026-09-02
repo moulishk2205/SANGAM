@@ -206,7 +206,7 @@ def health(db: DbSession = Depends(get_session)) -> dict:
         "storage": describe(),
         "chain_head": service.chain_head(db),
         "corpus": "synthetic, construction-derived",
-        "calibrated": False,
+        "calibrated": bool(_engine and _engine.scorer is not None),
     }
 
 
@@ -277,6 +277,9 @@ def match(req: MatchRequest, db: DbSession = Depends(get_session),
         ],
         "elapsed_ms": round(elapsed, 2),
         "model_version": MODEL_VERSION,
+        # Whether these scores are probabilities or ranking numbers. Per-candidate
+        # too, but the UI needs it before it has a candidate to look at.
+        "calibrated": bool(eng.scorer is not None),
     }
 
 

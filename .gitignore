@@ -4,7 +4,15 @@ data/
 *.csv
 *.xlsx
 *.parquet
-models/
+# models/* not models/ — an excluded DIRECTORY cannot be re-entered by a later
+# negation, so the pattern has to exclude its contents instead.
+models/*
+# ...but the fitted scorer ships. It is 17 KB of named coefficients, not a
+# 128 MB checkpoint, and without it a fresh clone silently falls back to the
+# deterministic path and reports uncalibrated scores with no sign anything is
+# missing. Retraining it needs the corpus and ~50 s; committing it costs nothing.
+!models/scorer/
+!models/scorer/*.json
 .venv/
 __pycache__/
 *.py[cod]

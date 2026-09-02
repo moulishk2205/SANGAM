@@ -153,7 +153,7 @@ function Field({ map, nodes, selected, onSelect, reduced }: FieldProps) {
   return (
     <div ref={wrap} className="relative w-full">
       <p className="mono mb-1 text-[10px] uppercase tracking-[0.06em] text-[var(--color-text-3)]">
-        ↑ score (uncalibrated ranking score, not a probability)
+        ↑ score (see the note below on what this number is)
       </p>
       <svg
         width={W}
@@ -1050,7 +1050,7 @@ export function Visualize() {
           <DemoNote>
             Demonstration corpus of {map.nodes.length ? '1,800' : '0'} synthetic source records
             across 4 invented organisations. Organisation names and material codes are not the
-            records of any real enterprise. Scores are uncalibrated ranking scores, not
+            records of any real enterprise. Scores come from the engine's fitted scorer, not
             probabilities. SANGAM decides identity, not substitutability — nothing on this
             screen is an approved alternative.
           </DemoNote>

@@ -268,6 +268,12 @@ class MatchExplanation:
     # for a client to recompute: the client cannot reproduce it exactly, because
     # the inputs it would use are already rounded to four places on the way out.
     raw_score: float = 0.0
+    # True when `confidence` came from the fitted scorer and its isotonic
+    # calibrator, so the number is a probability. False when it is the
+    # deterministic weighted score, which is a ranking number and nothing more.
+    # The distinction is carried all the way to the UI rather than assumed,
+    # because the two look identical and mean different things.
+    calibrated: bool = False
     rows: list[AttributeComparison] = field(default_factory=list)
     n_agree: int = 0
     n_disagree: int = 0
@@ -284,10 +290,11 @@ class MatchExplanation:
             "decision": self.decision.value,
             "confidence": round(self.confidence, 4),
             "raw_score": round(self.raw_score, 4),
-            # An uncalibrated ranking score, NOT a probability. Presenting it as
-            # "97% likely correct" would require a fitted calibrator on a labelled
+            # Whether this is a probability or a ranking score. With the fitted
+            # scorer loaded it is the former; without it the latter. Presenting an
+            # uncalibrated score as "97% likely correct" would require a calibrator
             # held-out set, which is Phase 2 work. Consumers must not relabel it.
-            "calibrated": False,
+            "calibrated": self.calibrated,
             "semantic_score": round(self.semantic_score, 4),
             "lexical_score": round(self.lexical_score, 4),
             "attribute_agreement": round(self.attribute_agreement, 4),

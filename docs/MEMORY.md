@@ -125,6 +125,19 @@ Five stages, all deterministic except the embedding lookup.
    attribute sets it to 0 and the pair scores exactly zero, however similar the
    text. Bands: `T_MATCH = 0.86`, `T_NEAR = 0.70`, `T_REVIEW = 0.45`.
 
+6. **Score** (`ml/model.py`) — when a fitted scorer is on disk:
+
+   ```
+   p(match) = veto x calibrate(sigma(w . x + b))
+   ```
+
+   The veto multiplies LAST and is not one of the twelve features, so it cannot
+   be outvoted — `test_veto_is_not_a_feature` asserts on the contract itself. A
+   second gate demotes MATCH to REVIEW_REQUIRED whenever a CRITICAL attribute is
+   unstated on either side. Bands are policy on a calibrated probability: MATCH
+   0.90, NEAR 0.70, REVIEW 0.40. With no artifact present the engine falls back
+   to stage 5 and reports `calibrated: false`.
+
 ### Measured, on the synthetic corpus (`python scripts/evaluate.py`)
 
 ```
@@ -143,10 +156,23 @@ similarity-threshold matcher would have merged, that the attribute veto caught.
 
 ## 4. Data provenance — read this before answering any question about it
 
-**There is no training. Zero training code exists in this repository.** The
-embedding model is downloaded frozen and used for retrieval only; every decision
-comes from deterministic rules. If asked "how did you train it", the correct
-answer is "we did not".
+**Two different things, and the distinction matters.**
+
+*The embedding model is NOT trained.* `bge-small-en-v1.5` is downloaded frozen
+and used for retrieval only. Nobody fine-tuned it and there is no fine-tuning
+code in this repository.
+
+*The decision layer IS trained.* `src/nmc/ml/` fits a 12-feature logistic
+regression plus an isotonic calibrator on labelled pairs —
+`python scripts/train_scorer.py`. Train/validation/test split **by canonical
+identity**, never by record, so two renderings of the same bolt cannot straddle
+the wall. Negatives are mined from the retriever's own top-k rather than sampled
+at random, because a random non-match is a bolt against a bearing and separating
+those describes a problem nobody has.
+
+If asked "how did you train it": the retrieval model was not trained at all; the
+decision layer was, on ~23k labelled pairs from the synthetic corpus, with the
+veto deliberately held out of the feature set.
 
 - **Canonical items, classification, attribute schema, match labels** — derived
   from the US **Defense Logistics Agency FLIS / PUB LOG** public catalogue,
@@ -385,7 +411,7 @@ The system is careful about what it does **not** claim. Preserve this.
 Be accurate about this; do not imply otherwise.
 
 Objection ledger · release-gate replay · dictionary desk · evidence tiers ·
-demand window · emergency lane · MPN fast path · confidence calibration ·
+demand window · emergency lane · MPN fast path ·
 validation against real CPSE data · CI · Docker · rate limiting · CSRF tokens ·
 password reset · account self-registration.
 
