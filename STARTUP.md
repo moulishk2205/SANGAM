@@ -145,13 +145,41 @@ and these are demonstration credentials — never reuse them anywhere.
 | --- | --- | --- | --- |
 | `reviewer.a@sangam.gov.in` | Reviewer | CPSE-A | fastener, pipe, flange · certified PRESSURE |
 | `reviewer.b@sangam.gov.in` | Reviewer | CPSE-B | fastener |
-| `steward@sangam.gov.in` | Steward | CPSE-A | dictionary and templates |
+| `steward@sangam.gov.in` | Steward | CPSE-A | every family, CPSE-A only |
 | `requester.a@sangam.gov.in` | Requester | CPSE-A | may propose, never approve |
 | `admin@sangam.gov.in` | Admin | CPSE-A | users and organisations |
 
 Authority is a pair, not a role: **organisation × commodity family**. A CPSE-B
 reviewer cannot approve a CPSE-A mapping, and no role — administrator included —
 is exempt from that. It is the guarantee the whole product rests on.
+
+Sign in from `/platform/signin`. The five accounts are on that page as one-click
+cards, so a reviewer never has to come back here to find a password.
+
+### The review queue is seeded on purpose
+
+Seeding holds back 22 of the 1,800 mappings as `PROPOSED` rather than
+`APPROVED`, so the review queue has work in it on a fresh database. An empty
+queue would be the honest result of a fully-adjudicated corpus and a useless
+demonstration — the reviewer would sign in, read "nothing waiting for you", and
+never reach the part of the product that matters.
+
+The 22 are chosen, not sampled, so that each account teaches a different rule:
+
+| Sign in as | What you see | What happens |
+| --- | --- | --- |
+| S. Nair | 12 items, CPSE-A only | The 3 CPSE-A valves never appear — `valve` is not one of her families |
+| S. Nair → a fastener | GENERAL class | Approves, writes a certificate, chain length moves |
+| S. Nair → a flange | PRESSURE class | Approves — she holds PRESSURE — but only with a written justification |
+| S. Nair → a pipe | FIRED class | Refused: she holds PRESSURE, not FIRED |
+| M. Banerjee | 5 items, CPSE-B only | Nair's 12 are invisible, not greyed out |
+| M. Banerjee → a CPSE-A id | — | Refused on the organisation rule |
+| K. Rao (requester) | — | Refused on role, before any scope is considered |
+
+Every refusal message is shown verbatim next to the item rather than as a toast,
+because the reason is the interesting output. Approvals write a real row: restart
+the engine and the decision, its certificate and its hash chain are all still
+there. To get the queue back, delete `sangam.db` and restart the engine.
 
 ---
 

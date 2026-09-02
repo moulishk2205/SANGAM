@@ -1,7 +1,10 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Link, useLocation } from 'react-router-dom'
-import { AnimatePresence, motion } from 'motion/react'
-import { House, MagnifyingGlass, Cube, ArrowLeft, Stack, Graph } from '@phosphor-icons/react'
+import { motion } from 'motion/react'
+import {
+  House, MagnifyingGlass, Cube, ArrowLeft, Stack, Graph, ClipboardText, Seal,
+  SignOut, SignIn as SignInIcon,
+} from '@phosphor-icons/react'
 import './tokens.css'
 import { ThemeToggle } from './components/ThemeToggle'
 
@@ -11,6 +14,10 @@ import { Canonical } from './screens/Canonical'
 import { Explorer } from './screens/Explorer'
 import { Visualize } from './screens/Visualize'
 import { NotFound } from './screens/NotFound'
+import { SignIn } from './screens/SignIn'
+import { Review } from './screens/Review'
+import { Ledger } from './screens/Ledger'
+import { SessionProvider, useSession } from './Session'
 
 /**
  * Application shell.
@@ -24,13 +31,19 @@ import { NotFound } from './screens/NotFound'
 // catalogue figures and search entry that live there; "Visualization" named a
 // technique rather than the relationships it shows.
 const NAV = [
-  { to: '/platform',              label: 'Overview',      Icon: House,           end: true },
-  { to: '/platform/analyse',      label: 'Analyse',       Icon: MagnifyingGlass, end: false },
-  { to: '/platform/explorer',     label: 'Explorer',      Icon: Stack,           end: false },
-  { to: '/platform/visualization', label: 'Relationships', Icon: Graph,           end: false },
+  { to: '/platform',               label: 'Overview',      Icon: House,           end: true,  needsReview: false },
+  { to: '/platform/analyse',       label: 'Analyse',       Icon: MagnifyingGlass, end: false, needsReview: false },
+  { to: '/platform/explorer',      label: 'Explorer',      Icon: Stack,           end: false, needsReview: false },
+  { to: '/platform/visualization', label: 'Relationships', Icon: Graph,           end: false, needsReview: false },
+  // Hidden rather than disabled when signed out. A rail full of things you
+  // cannot use is worse than a shorter one, and the server refuses regardless —
+  // the nav is a convenience, never the enforcement.
+  { to: '/platform/review',        label: 'Review',        Icon: ClipboardText,   end: false, needsReview: true },
+  { to: '/platform/ledger',        label: 'Ledger',        Icon: Seal,            end: false, needsReview: true },
 ]
 
-function Rail() {
+function Rail({ canReview }: { canReview: boolean }) {
+  const items = canReview ? NAV : NAV.filter((n) => !n.needsReview)
   return (
     <nav
       aria-label="Sections"
@@ -44,7 +57,7 @@ function Rail() {
                  overflow-x-auto lg:overflow-visible rail-scroll
                  snap-x snap-mandatory lg:snap-none"
     >
-      {NAV.map(({ to, label, Icon, end }) => (
+      {items.map(({ to, label, Icon, end }) => (
         <NavLink
           key={to}
           to={to}
@@ -78,6 +91,8 @@ function Rail() {
 
 function Chrome() {
   const loc = useLocation()
+  const { user, signOut } = useSession()
+  const canReview = !!user
   return (
     <div className="app">
       <a href="#content" className="skip-link">Skip to content</a>
@@ -105,7 +120,35 @@ function Chrome() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {user ? (
+              <div className="flex items-center gap-2.5">
+                <span className="hidden sm:block text-right leading-tight">
+                  <span className="block text-[12.5px] font-semibold text-[var(--color-text)]">
+                    {user.name}
+                  </span>
+                  <span className="block text-[11px] text-[var(--color-text-3)]">
+                    {user.role} · {user.org_id}
+                  </span>
+                </span>
+                <button
+                  onClick={() => signOut()}
+                  title="Sign out"
+                  aria-label="Sign out"
+                  className="press grid h-8 w-8 place-items-center rounded-[var(--radius-control)]
+                             text-[var(--color-text-3)] hover:bg-[var(--color-surface-3)]
+                             hover:text-[var(--color-text)] cursor-pointer"
+                >
+                  <SignOut size={15} weight="bold" aria-hidden="true" />
+                </button>
+              </div>
+            ) : (
+              <Link to="/platform/signin"
+                    className="press link inline-flex items-center gap-1.5 text-[13px] font-medium">
+                <SignInIcon size={13} weight="bold" aria-hidden="true" />
+                Sign in
+              </Link>
+            )}
             <ThemeToggle />
             <a href="/" className="press link text-[13px] font-medium inline-flex items-center gap-1.5">
               <ArrowLeft size={13} weight="bold" aria-hidden="true" />
@@ -119,33 +162,39 @@ function Chrome() {
               aside sizes to its content and the rail's overflow-x-auto has
               nothing to clip against — the page scrolls sideways instead. */}
           <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
-            <Rail />
+            <Rail canReview={canReview} />
           </aside>
 
           <main id="content" className="min-w-0 pb-16">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={loc.pathname}
-                // Enters from below and leaves back down the way it came. It
-                // previously entered at y:8 and exited at y:-4 — in from the
-                // bottom, out through the top, and at different magnitudes.
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-              >
-                <Routes location={loc}>
-                  <Route path="/platform" element={<Home />} />
-                  <Route path="/platform/analyse" element={<Analyse />} />
-                  <Route path="/platform/material/:nmc" element={<Canonical />} />
-                  <Route path="/platform/explorer" element={<Explorer />} />
-                  <Route path="/platform/visualization" element={<Visualize />} />
-                  {/* Every unmatched path previously rendered the shell with an
-                      empty content area, which reads as a broken build. */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </motion.div>
-            </AnimatePresence>
+            {/* No AnimatePresence here, deliberately. `mode="wait"` holds the
+                incoming route until the outgoing one finishes exiting, which
+                costs 220ms of dead screen on every single nav click — and if
+                the tab is backgrounded mid-navigation, rAF is paused, the exit
+                never completes, and the URL changes while the screen does not.
+                A keyed motion.div still replays the enter animation on every
+                route change; the outgoing screen simply leaves at once. The
+                deliberate `mode="wait"` lives in Analyse, where the pause is
+                the point. */}
+            <motion.div
+              key={loc.pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <Routes location={loc}>
+                <Route path="/platform" element={<Home />} />
+                <Route path="/platform/analyse" element={<Analyse />} />
+                <Route path="/platform/material/:nmc" element={<Canonical />} />
+                <Route path="/platform/explorer" element={<Explorer />} />
+                <Route path="/platform/visualization" element={<Visualize />} />
+                <Route path="/platform/signin" element={<SignIn />} />
+                <Route path="/platform/review" element={<Review />} />
+                <Route path="/platform/ledger" element={<Ledger />} />
+                {/* Every unmatched path previously rendered the shell with an
+                    empty content area, which reads as a broken build. */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </motion.div>
           </main>
         </div>
       </div>
@@ -166,7 +215,9 @@ export function Platform() {
 
   return (
     <BrowserRouter>
-      <Chrome />
+      <SessionProvider>
+        <Chrome />
+      </SessionProvider>
     </BrowserRouter>
   )
 }

@@ -574,7 +574,11 @@ def decisions(limit: int = Query(default=50, ge=1, le=200),
 @app.get("/api/decisions/{decision_id}")
 def decision_certificate(decision_id: str, db: DbSession = Depends(get_session)) -> dict:
     """The certificate, served verbatim — including the evidence as frozen."""
-    d = db.get(Decision, decision_id)
+    # Not db.get(): Decision's primary key is `seq`, because SQLite only
+    # auto-increments an INTEGER PRIMARY KEY. `id` is the public handle and
+    # carries its own unique index, so it has to be queried by column — a
+    # db.get() here silently looks up seq == "dec-…" and 404s every time.
+    d = db.scalar(select(Decision).where(Decision.id == decision_id))
     if d is None:
         fail(404, "not_found", f"No decision {decision_id}.")
     actor = db.get(User, d.actor_id) if d.actor_id else None

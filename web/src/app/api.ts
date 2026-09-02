@@ -63,10 +63,54 @@ export type Health = {
   model_version: string; index_build_ms: number; corpus: string; calibrated: boolean
 }
 
+/**
+ * The session is an httponly cookie, so every request has to opt in to sending
+ * it. Without `credentials: 'include'` the browser omits the cookie on a
+ * cross-origin request and every authenticated call fails as anonymous — with a
+ * 401 that looks like a broken login rather than a missing flag.
+ */
+const CREDS: RequestInit = { credentials: 'include' }
+
+/** The backend answers failures with a code and a sentence meant for a person. */
+export class ApiError extends Error {
+  // Declared explicitly rather than as constructor parameter properties: this
+  // project builds with `erasableSyntaxOnly`, which forbids TS syntax that
+  // emits runtime code.
+  status: number
+  code: string
+
+  constructor(status: number, code: string, message: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = code
+  }
+}
+
+async function unwrap<T>(r: Response): Promise<T> {
+  if (r.ok) return r.json()
+  let code = 'error'
+  let message = `${r.status} ${r.statusText}`
+  try {
+    const body = await r.json()
+    const d = body?.detail ?? body
+    if (d?.code) code = d.code
+    if (d?.message) message = d.message
+  } catch { /* a non-JSON error body; the status line stands */ }
+  throw new ApiError(r.status, code, message)
+}
+
 async function get<T>(path: string): Promise<T> {
-  const r = await fetch(`${BASE}${path}`)
-  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)
-  return r.json()
+  return unwrap<T>(await fetch(`${BASE}${path}`, CREDS))
+}
+
+async function send<T>(path: string, body: unknown, method = 'POST'): Promise<T> {
+  return unwrap<T>(await fetch(`${BASE}${path}`, {
+    ...CREDS,
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }))
 }
 
 export const api = {
@@ -83,22 +127,10 @@ export const api = {
       `/api/canonical?q=${encodeURIComponent(q)}&limit=${limit}`),
   canonical: (id: string) => get<CanonicalDetail>(`/api/canonical/${encodeURIComponent(id)}`),
   async materialMap(description: string, topK = 20): Promise<MaterialMap> {
-    const r = await fetch(`${BASE}/api/visualization`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description, top_k: topK }),
-    })
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)
-    return r.json()
+    return send<MaterialMap>('/api/visualization', { description, top_k: topK })
   },
   async match(description: string, topK = 8): Promise<MatchResult> {
-    const r = await fetch(`${BASE}/api/match`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description, top_k: topK }),
-    })
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)
-    return r.json()
+    return send<MatchResult>('/api/match', { description, top_k: topK })
   },
 }
 
@@ -200,4 +232,89 @@ export type MaterialMap = {
   relations: Record<Relation, { label: string; meaning: string; tone: string }>
   thresholds: { match: number; near: number; review: number }
   dense_channel: boolean; elapsed_ms: number; model_version: string; calibrated: false
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Identity, the review queue, and the write path.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+export type Role = 'REQUESTER' | 'REVIEWER' | 'STEWARD' | 'ADMIN'
+
+export type CurrentUser = {
+  id: string; email: string; name: string; role: Role
+  org_id: string; org_name: string
+  commodity_scope: string[]
+  class_certifications: string[]
+}
+
+export type QueueItem = {
+  mapping_id: string; record_id: string; org: string; org_code: string
+  description: string; canonical_id: string; canonical_text: string
+  item_name: string; item_class: string; family: string
+  confidence: number; engine: string
+  you_may_approve: boolean
+}
+
+export type MappingOut = {
+  mapping_id: string; source_record_id: string; canonical_id: string
+  status: 'PROPOSED' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED'
+  confidence: number; effective_from: string; effective_to: string | null
+}
+
+export type DecisionRow = {
+  id: string; seq: number; kind: string; mapping_id: string | null
+  canonical_id: string | null; actor_id: string | null; actor_role: string
+  actor_scope: Record<string, unknown>; note: string
+  gazetteer_version: string; template_version: string; model_version: string
+  hash: string; prev_hash: string; at: string
+}
+
+export type Certificate = DecisionRow & {
+  actor: { id: string; name: string; role: string; scope_at_decision: Record<string, unknown> } | null
+  evidence: Record<string, unknown>
+  versions: { gazetteer: string; template: string; model: string }
+  chain: { prev_hash: string; hash: string }
+}
+
+export type HistoryRow = {
+  mapping_id: string; canonical_id: string; status: string
+  from: string; to: string | null; superseded_by: string | null; engine: string
+}
+
+export const auth = {
+  me: () => get<{ user: CurrentUser | null }>('/api/auth/me'),
+  login: (email: string, password: string) =>
+    send<{ user: CurrentUser; expires_at: string }>('/api/auth/login', { email, password }),
+  logout: () => send<{ ok: boolean }>('/api/auth/logout', {}),
+}
+
+export const work = {
+  queue: (limit = 25) => get<{
+    queue: QueueItem[]; next_cursor: string | null
+    scope: { org: string; commodity: string[] }
+  }>(`/api/review/queue?limit=${limit}`),
+
+  propose: (source_record_id: string, canonical_id: string,
+            opts: { confidence?: number; engine_decision?: string; evidence?: unknown; note?: string } = {}) =>
+    send<MappingOut>('/api/mappings/propose', { source_record_id, canonical_id, ...opts }),
+
+  approve: (mappingId: string, note: string) =>
+    send<MappingOut>(`/api/mappings/${mappingId}/approve`, { note }),
+  reject: (mappingId: string, note: string) =>
+    send<MappingOut>(`/api/mappings/${mappingId}/reject`, { note }),
+  unmap: (recordId: string, note: string) =>
+    send<MappingOut>(`/api/records/${recordId}/unmap`, { note }),
+  remap: (recordId: string, canonical_id: string, note: string) =>
+    send<MappingOut>(`/api/records/${recordId}/remap`, { canonical_id, note }),
+
+  history: (recordId: string) =>
+    get<{ record_id: string; history: HistoryRow[] }>(`/api/material/${recordId}/history`),
+}
+
+export const ledger = {
+  decisions: (limit = 50) => get<{ decisions: DecisionRow[] }>(`/api/decisions?limit=${limit}`),
+  certificate: (id: string) => get<Certificate>(`/api/decisions/${id}`),
+  verify: () => get<{ ok: boolean; checked: number; head?: string; broken_at?: string; note: string }>(
+    '/api/decisions/chain/verify'),
 }

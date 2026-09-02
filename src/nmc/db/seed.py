@@ -152,17 +152,75 @@ def seed(db: DbSession, *, limit_specs: int = 600, variants: int = 3) -> dict:
         ))
     db.flush()
 
+    # ── the queue ──────────────────────────────────────────────────────────
+    # A slice of records is held back as PROPOSED rather than APPROVED, so the
+    # review queue has work in it on a fresh database. A demo whose queue is
+    # empty demonstrates nothing: the reviewer signs in, sees "nothing waiting
+    # for you", and never reaches the part of the product that matters.
+    #
+    # The slice is chosen, not sampled. It is composed so that signing in as
+    # each demo account teaches a different rule:
+    #
+    #   CPSE-A fastener  → S. Nair approves cleanly (in scope, GENERAL class)
+    #   CPSE-A flange    → in scope, PRESSURE class, and she holds PRESSURE:
+    #                      approves, but the class demands a justification
+    #   CPSE-A pipe      → in scope, but FIRED class and she is not certified
+    #                      for it — refused on the class lock
+    #   CPSE-A valve     → PRESSURE, and 'valve' is not in her families at all
+    #                      — refused on commodity scope, a different refusal
+    #   CPSE-B fastener  → M. Banerjee's queue, invisible to S. Nair entirely
+    #
+    # Only records from groups of two or more are held back, so every canonical
+    # identity keeps an approved anchor. A proposal against an identity that
+    # exists is the real shape of the work; a proposal that is the sole member
+    # of its own group is a new identity, which is a different workflow.
+    from ..extract.templates import family_for
+
+    _QUEUE_PLAN = [
+        ("CPSE-A", "fastener", 6),
+        ("CPSE-A", "flange", 3),
+        ("CPSE-A", "pipe", 3),
+        ("CPSE-A", "valve", 3),
+        ("CPSE-B", "fastener", 5),
+        ("CPSE-B", "bearing", 2),
+    ]
+
+    by_key: dict[str, list] = {}
+    for r in records:
+        by_key.setdefault(truth[r.id], []).append(r)
+
+    held: dict[str, float] = {}          # record id -> the engine's confidence
+    for org, family, want in _QUEUE_PLAN:
+        taken = 0
+        for r in records:
+            if taken >= want or r.id in held:
+                continue
+            if (r.org or "CPSE-A") != org:
+                continue
+            if family_for(r.item_name or "") != family:
+                continue
+            if len(by_key[truth[r.id]]) < 2:
+                continue                  # keep an approved anchor per identity
+            # Deterministic, plausible, and deliberately not 1.0 — these are
+            # the engine's own uncalibrated numbers, which is exactly why a
+            # person is being asked. Spread across the near-match band so the
+            # queue does not read as a column of identical scores.
+            held[r.id] = round(0.72 + (sum(ord(c) for c in r.id) % 23) / 100, 4)
+            taken += 1
+
     # Seeded mappings are APPROVED, because in this corpus the grouping is
     # correct by construction rather than by anyone's judgement. Each carries
     # decided_by_engine="SEED" so it is never mistaken for an adjudicated
     # decision — there is no certificate for these, and there should not be:
     # nobody decided them.
     for r in records:
+        proposed = r.id in held
         db.add(Mapping(
             id=f"map-{secrets.token_hex(8)}", source_record_id=r.id,
             canonical_id=canon_by_key[truth[r.id]],
-            status=MappingStatus.APPROVED, confidence=1.0,
-            decided_by_engine="SEED",
+            status=MappingStatus.PROPOSED if proposed else MappingStatus.APPROVED,
+            confidence=held[r.id] if proposed else 1.0,
+            decided_by_engine="ENGINE" if proposed else "SEED",
         ))
     db.commit()
 
@@ -174,4 +232,5 @@ def seed(db: DbSession, *, limit_specs: int = 600, variants: int = 3) -> dict:
         "canonical_materials": len(canon_by_key),
         "source_records": len(records),
         "item_names": len(ITEM_NAMES),
+        "awaiting_review": len(held),
     }
