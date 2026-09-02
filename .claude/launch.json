@@ -4,9 +4,17 @@
     {
       "name": "sih26099-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
       "cwd": "web",
-      "port": 5173
+      "port": 5173,
+      "autoPort": false
     }
   ]
 }

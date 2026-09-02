@@ -26,10 +26,17 @@ scipy>=1.14
 sentence-transformers>=3.0
 torch>=2.3
 
+# --- persistence ---
+# SQLite by default via DATABASE_URL; the schema is portable to Postgres and
+# the same migrations apply. See the note at the top of src/nmc/db/models.py.
+sqlalchemy>=2.0
+alembic>=1.13
+
 # --- backend ---
 fastapi>=0.115
 uvicorn[standard]>=0.30
 pydantic>=2.8
+python-multipart>=0.0.9   # file upload for bulk ingest
 
 # --- dev ---
 pytest>=8.0

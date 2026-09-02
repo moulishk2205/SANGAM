@@ -111,6 +111,50 @@ the accuracy numbers will not match the ones we report.
 
 ---
 
+## 3b. The database
+
+State lives in a real database now, not in memory. `DATABASE_URL` selects the
+backend; the default is a SQLite file, `sangam.db`, beside the repository.
+
+SQLite is deliberate. A demo that cannot start without a Postgres server is a
+demo that fails at the venue, and nothing in the schema is SQLite-specific —
+point `DATABASE_URL` at Postgres and the same migrations apply.
+
+**You do not need to do anything.** On first start the engine creates the schema
+and seeds the demonstration corpus (~1 second), then reads from storage on every
+start after that. The file is gitignored, so a fresh clone builds its own.
+
+To run the migration explicitly, or to inspect where the schema stands:
+
+```bash
+python -m alembic upgrade head
+```
+
+To start over from an empty database, delete the file and restart:
+
+```bash
+rm -f sangam.db && python -m alembic upgrade head
+```
+
+### Demo accounts
+
+Seeded with hashed passwords. The password for all of them is `sangam-demo`,
+and these are demonstration credentials — never reuse them anywhere.
+
+| Email | Role | Organisation | Scope |
+| --- | --- | --- | --- |
+| `reviewer.a@sangam.gov.in` | Reviewer | CPSE-A | fastener, pipe, flange · certified PRESSURE |
+| `reviewer.b@sangam.gov.in` | Reviewer | CPSE-B | fastener |
+| `steward@sangam.gov.in` | Steward | CPSE-A | dictionary and templates |
+| `requester.a@sangam.gov.in` | Requester | CPSE-A | may propose, never approve |
+| `admin@sangam.gov.in` | Admin | CPSE-A | users and organisations |
+
+Authority is a pair, not a role: **organisation × commodity family**. A CPSE-B
+reviewer cannot approve a CPSE-A mapping, and no role — administrator included —
+is exempt from that. It is the guarantee the whole product rests on.
+
+---
+
 ## 4. Starting it
 
 ### The VS Code way (one command)
