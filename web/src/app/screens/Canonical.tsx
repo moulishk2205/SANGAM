@@ -4,6 +4,7 @@ import { motion } from 'motion/react'
 import { ArrowLeft, Buildings } from '@phosphor-icons/react'
 import { api, readableError, type CanonicalDetail } from '../api'
 import { Card, SectionTitle, NmcTag, OrgChip, DemoNote } from '../components/ui'
+import { DetailSkeleton } from '../components/Skeleton'
 
 /**
  * 05 — Canonical material identity.
@@ -26,12 +27,12 @@ export function Canonical() {
   }, [nmc])
 
   if (err) return (
-    <p role="alert" className="rounded-lg border px-4 py-3 text-[13.5px]"
+    <p role="alert" className="rounded-lg border px-4 py-3 text-[13px]"
        style={{ background: 'var(--color-distinct-soft)', borderColor: 'var(--color-distinct-line)', color: 'var(--color-distinct)' }}>
       {err}
     </p>
   )
-  if (!rec) return <p className="text-[14px] text-[var(--color-text-3)]">Loading record…</p>
+  if (!rec) return <DetailSkeleton />
 
   return (
     <div className="grid gap-6">
@@ -62,7 +63,7 @@ export function Canonical() {
                   transition={{ duration: 0.28, delay: 0.04 * i, ease: [0.23, 1, 0.32, 1] }}
                   className="row grid grid-cols-[10rem_1fr] gap-4 px-4 py-3 border-b border-[var(--color-line)] last:border-0">
                   <dt className="text-[13px] text-[var(--color-text-3)]">{a.label}</dt>
-                  <dd className="mono m-0 text-[13.5px] font-medium">{a.value}</dd>
+                  <dd className="mono m-0 text-[13px] font-medium">{a.value}</dd>
                 </motion.div>
               ))}
             </dl>
@@ -84,16 +85,16 @@ export function Canonical() {
                   <div className="flex items-center gap-2 mb-1">
                     <Buildings size={13} weight="fill" aria-hidden="true" style={{ color: 'var(--color-text-3)' }} />
                     <OrgChip org={s.org} />
-                    <span className="mono text-[12.5px] font-semibold" style={{ color: 'var(--color-info)' }}>
+                    <span className="mono text-[12px] font-semibold" style={{ color: 'var(--color-info)' }}>
                       {s.org_code}
                     </span>
                   </div>
-                  <p className="mono text-[12.5px] text-[var(--color-text-2)] pl-[1.35rem]">{s.description}</p>
+                  <p className="mono text-[12px] text-[var(--color-text-2)] pl-[1.35rem]">{s.description}</p>
                 </motion.li>
               ))}
             </ul>
           </Card>
-          <p className="mt-2.5 text-[12.5px] text-[var(--color-text-2)]">
+          <p className="mt-2.5 text-[12px] text-[var(--color-text-2)]">
             Every organisation keeps its own code. The canonical identity is an additional layer,
             never a replacement, and the mapping is reversible.
           </p>

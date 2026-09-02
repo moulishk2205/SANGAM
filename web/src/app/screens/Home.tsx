@@ -4,6 +4,7 @@ import { motion } from 'motion/react'
 import { ArrowRight, Sparkle } from '@phosphor-icons/react'
 import { api, readableError, type Stats, type Health } from '../api'
 import { Card, Button, StatTile, SectionTitle, DemoNote } from '../components/ui'
+import { StatRowSkeleton } from '../components/Skeleton'
 
 /**
  * 01 — Home.
@@ -47,7 +48,7 @@ export function Home() {
             Standardize material identity
             <br className="hidden sm:block" /> across organisations.
           </h1>
-          <p className="mt-3 text-[15.5px] text-[var(--color-text-2)] max-w-[60ch]">
+          <p className="mt-3 text-[15px] text-[var(--color-text-2)] max-w-[60ch]">
             Enter any material description. The engine extracts its engineering attributes,
             retrieves candidates, and decides identity on the specification rather than on
             how the words are spelled.
@@ -66,7 +67,7 @@ export function Home() {
                 placeholder="STAINLESS STEEL HEXAGONAL BOLT 10MM X 50MM"
                 autoComplete="off"
                 spellCheck={false}
-                className="mono flex-1 bg-transparent px-4 py-3.5 text-[14.5px] text-[var(--color-text)]
+                className="mono flex-1 bg-transparent px-4 py-3.5 text-[14px] text-[var(--color-text)]
                            placeholder:text-[var(--color-text-3)] outline-none rounded-lg"
               />
               <Button type="submit" disabled={!q.trim()} icon={<ArrowRight size={15} weight="bold" />}>
@@ -98,7 +99,7 @@ export function Home() {
                                hover:border-[var(--color-brand-line)] hover:bg-[var(--color-brand-soft)]
                                transition-colors duration-200"
                   >
-                    <span className="block text-[12.5px] font-semibold text-[var(--color-text)]
+                    <span className="block text-[12px] font-semibold text-[var(--color-text)]
                                      group-hover:text-[var(--color-brand)]">
                       {s.chip}
                     </span>
@@ -114,13 +115,23 @@ export function Home() {
       </section>
 
       {err && (
-        <p role="alert" className="rounded-lg border px-4 py-3 text-[13.5px]"
+        <p role="alert" className="rounded-lg border px-4 py-3 text-[13px]"
            style={{ background: 'var(--color-distinct-soft)', borderColor: 'var(--color-distinct-line)', color: 'var(--color-distinct)' }}>
           {err}
         </p>
       )}
 
       {/* ── What is in the catalogue ───────────────────────────────────── */}
+      {/* The figures block previously rendered nothing until the fetch resolved,
+          so the page grew by four tiles under the reader. Reserving the space
+          with matching shapes removes that jump. */}
+      {!stats && !err && (
+        <section aria-labelledby="cat-loading">
+          <SectionTitle><span id="cat-loading">Catalogue</span></SectionTitle>
+          <StatRowSkeleton />
+        </section>
+      )}
+
       {stats && (
         <section aria-labelledby="cat">
           <SectionTitle hint={`${stats.collapse_ratio}× collapse`}>
@@ -152,7 +163,7 @@ export function Home() {
               transition={{ duration: 0.34, delay: 0.05 * i, ease: [0.23, 1, 0.32, 1] }}>
               <Card spotlight className="p-4 h-full">
                 <span className="mono text-[11px] font-semibold text-[var(--color-brand)]">{s.n}</span>
-                <h3 className="mt-1.5 text-[14.5px] font-semibold">{s.t}</h3>
+                <h3 className="mt-1.5 text-[14px] font-semibold">{s.t}</h3>
                 <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--color-text-2)]">{s.d}</p>
               </Card>
             </motion.div>
@@ -164,7 +175,7 @@ export function Home() {
       {health && (
         <Card className="p-4">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-2">
-            <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium">
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-medium">
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--color-brand)' }} aria-hidden="true" />
               Engine ready
             </span>

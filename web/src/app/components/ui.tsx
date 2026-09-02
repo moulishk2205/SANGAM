@@ -105,7 +105,7 @@ export function NmcTag({ id, size = 'md' }: { id: string; size?: 'sm' | 'md' }) 
   return (
     <span
       className={`mono inline-flex items-center rounded-md border font-medium
-                  ${size === 'sm' ? 'px-1.5 py-0.5 text-[11px]' : 'px-2 py-1 text-[12.5px]'}`}
+                  ${size === 'sm' ? 'px-1.5 py-0.5 text-[11px]' : 'px-2 py-1 text-[12px]'}`}
       style={{
         color: 'var(--color-info)',
         background: 'var(--color-info-soft)',

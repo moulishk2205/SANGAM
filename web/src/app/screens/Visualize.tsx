@@ -422,11 +422,11 @@ function Floor({ map, groups, onPick }: {
               className="press min-w-0 rounded-lg border px-2.5 py-2 text-left cursor-pointer"
               style={{ background: 'var(--color-distinct-soft)', borderColor: 'var(--color-distinct-line)' }}
             >
-              <p className="mono text-[11.5px] font-semibold leading-tight truncate"
+              <p className="mono text-[11px] font-semibold leading-tight truncate"
                  style={{ color: 'var(--color-distinct)' }}>
                 {g.value}
               </p>
-              <p className="text-[10.5px] text-[var(--color-text-2)] mt-0.5">
+              <p className="text-[11px] text-[var(--color-text-2)] mt-0.5">
                 {g.count} record{g.count > 1 ? 's' : ''}
               </p>
               {g.also_disagrees > 0 && (
@@ -454,15 +454,15 @@ function Row({ c, verdict }: { c: EvidenceCell; verdict: 'AGREE' | 'DISAGREE' | 
     <li className="flex items-start gap-2 py-1.5 border-b border-[var(--color-line)] last:border-0">
       <Icon size={13} weight="fill" aria-hidden="true" className="mt-0.5 shrink-0" style={{ color: fg }} />
       <div className="min-w-0 flex-1">
-        <p className="text-[12.5px] font-medium text-[var(--color-text)]">
+        <p className="text-[12px] font-medium text-[var(--color-text)]">
           {c.label}
           {c.criticality === 'CRITICAL' && (
-            <span className="mono ml-1.5 text-[9.5px] uppercase tracking-wide text-[var(--color-text-3)]">
+            <span className="mono ml-1.5 text-[10px] uppercase tracking-wide text-[var(--color-text-3)]">
               critical
             </span>
           )}
         </p>
-        <p className="mono text-[11.5px] text-[var(--color-text-2)] mt-0.5 break-words">
+        <p className="mono text-[11px] text-[var(--color-text-2)] mt-0.5 break-words">
           {c.source} <span className="text-[var(--color-text-3)]">vs</span> {c.candidate}
         </p>
         {c.detail && <p className="text-[11px] text-[var(--color-text-3)] mt-0.5">{c.detail}</p>}
@@ -494,11 +494,11 @@ function Inspector({ map, node }: { map: MaterialMap; node: MapNode }) {
         <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-3)]">
           Selected candidate
         </p>
-        <p className="mono text-[13.5px] text-[var(--color-text)] mt-1.5 leading-snug">
+        <p className="mono text-[13px] text-[var(--color-text)] mt-1.5 leading-snug">
           {node.description}
         </p>
         <div className="flex flex-wrap items-center gap-2 mt-2">
-          <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-[11.5px] font-semibold"
+          <span className="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold"
                 style={{ color: t.fg, background: t.soft, borderColor: t.line }}>
             {map.relations[node.relation].label}
           </span>
@@ -539,7 +539,7 @@ function Inspector({ map, node }: { map: MaterialMap; node: MapNode }) {
                       color: 'var(--color-distinct)' }}>
           <Prohibit size={15} weight="fill" aria-hidden="true" className="mt-0.5 shrink-0" />
           <div className="min-w-0">
-            <p className="text-[12.5px] font-semibold">
+            <p className="text-[12px] font-semibold">
               First critical failure: {node.blockers[0]?.label}
               {node.blockers.length > 1 && ` (+${node.blockers.length - 1} more)`}
             </p>
@@ -715,7 +715,7 @@ export function Visualize() {
         <h1 id="viz-h" className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-[-0.02em] leading-tight">
           Where this material sits
         </h1>
-        <p className="mt-2 text-[14.5px] text-[var(--color-text-2)] max-w-[68ch]">
+        <p className="mt-2 text-[14px] text-[var(--color-text-2)] max-w-[68ch]">
           Every candidate the engine retrieved, placed by the score it was actually given.
           Position is never a claim about similarity — the horizontal axis is an ordering,
           and the vertical axis is the decision.
@@ -748,7 +748,7 @@ export function Visualize() {
             <div>
               <p className="text-[14px] font-semibold text-[var(--color-text)]">SANGAM engine unavailable</p>
               <p className="text-[13px] text-[var(--color-text-2)] mt-1 max-w-[62ch]">{err}</p>
-              <p className="text-[12.5px] text-[var(--color-text-3)] mt-2">
+              <p className="text-[12px] text-[var(--color-text-3)] mt-2">
                 No graph is shown rather than a placeholder one. Nothing on this screen is
                 drawn without the engine.
               </p>
@@ -777,7 +777,7 @@ export function Visualize() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-3)]">
                 Reference material
               </p>
-              <p className="mono text-[11.5px] text-[var(--color-text-3)]">
+              <p className="mono text-[11px] text-[var(--color-text-3)]">
                 {map.item_name ?? 'unclassified'} · {map.elapsed_ms.toFixed(1)} ms
               </p>
             </div>
@@ -788,7 +788,7 @@ export function Visualize() {
                   <span className="text-[var(--color-text-3)]">{a.label}</span>{' '}
                   <span className="mono font-medium text-[var(--color-text)]">{a.value}</span>
                   {a.critical && (
-                    <span className="mono ml-1 text-[9px] uppercase tracking-wide"
+                    <span className="mono ml-1 text-[10px] uppercase tracking-wide"
                           style={{ color: 'var(--color-brand)' }}>crit</span>
                   )}
                 </span>
@@ -840,7 +840,7 @@ export function Visualize() {
                     return (
                       <button key={r} onClick={() => toggle(r)} aria-pressed={on}
                         className="press inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1
-                                   text-[11.5px] font-medium cursor-pointer"
+                                   text-[11px] font-medium cursor-pointer"
                         style={on
                           ? { color: t.fg, background: t.soft, borderColor: t.line }
                           : { color: 'var(--color-text-3)', background: 'transparent',
@@ -918,7 +918,7 @@ export function Visualize() {
               <Card className="p-3.5">
                 <div className="flex flex-wrap gap-x-5 gap-y-2">
                   {RELATION_ORDER.map((r) => (
-                    <span key={r} className="inline-flex items-center gap-2 text-[11.5px]">
+                    <span key={r} className="inline-flex items-center gap-2 text-[11px]">
                       <svg width={16} height={16} aria-hidden="true" className="shrink-0">
                         {r === 'REJECTED'
                           ? <circle cx={8} cy={8} r={5.5} fill="none" stroke={TONE[r].fg}
@@ -933,7 +933,7 @@ export function Visualize() {
                     </span>
                   ))}
                 </div>
-                <p className="text-[11.5px] leading-relaxed text-[var(--color-text-3)] mt-2.5">
+                <p className="text-[11px] leading-relaxed text-[var(--color-text-3)] mt-2.5">
                   A rejected candidate is drawn as a hollow ring at the score it would have
                   had if the veto were a weight, with a line falling to the attribute that
                   stopped it. The gap between ring and gate is the veto, at scale.
@@ -948,10 +948,10 @@ export function Visualize() {
                   <Inspector map={map} node={node} />
                 ) : (
                   <div className="py-8 text-center">
-                    <p className="text-[13.5px] font-medium text-[var(--color-text)]">
+                    <p className="text-[13px] font-medium text-[var(--color-text)]">
                       Select a candidate
                     </p>
-                    <p className="text-[12.5px] text-[var(--color-text-2)] mt-1.5 max-w-[36ch] mx-auto leading-relaxed">
+                    <p className="text-[12px] text-[var(--color-text-2)] mt-1.5 max-w-[36ch] mx-auto leading-relaxed">
                       Click any mark in the field, or a rejection below the gate, to see every
                       attribute that was compared and the arithmetic that produced its score.
                     </p>
@@ -969,7 +969,7 @@ export function Visualize() {
                 <p className="text-[13px] leading-relaxed text-[var(--color-text-2)]">
                   Measured on this result set, not stored:
                 </p>
-                <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 mt-2.5 text-[12.5px]">
+                <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 mt-2.5 text-[12px]">
                   <dt className="text-[var(--color-text-2)]">Lowest text similarity among accepted</dt>
                   <dd className="m-0 mono text-[var(--color-text)]">
                     {fmt(map.evidence_stats.threshold_floor)}
@@ -990,7 +990,7 @@ export function Visualize() {
                     </p>
                     <ul className="list-none p-0 m-0 mt-2 grid gap-1">
                       {map.evidence_stats.inversion_examples.map((x) => (
-                        <li key={x.description} className="text-[11.5px] leading-snug">
+                        <li key={x.description} className="text-[11px] leading-snug">
                           <span className="mono text-[var(--color-text-2)]">{fmt(x.text)}</span>{' '}
                           <span className="mono text-[var(--color-text)]">{x.description}</span>{' '}
                           <span className="text-[var(--color-text-3)]">— differs on {x.blockers.join(', ')}</span>
@@ -1004,7 +1004,7 @@ export function Visualize() {
                     text alone. That is a property of this result set, not a guarantee.
                   </p>
                 )}
-                <p className="text-[11.5px] text-[var(--color-text-3)] mt-3 leading-relaxed">
+                <p className="text-[11px] text-[var(--color-text-3)] mt-3 leading-relaxed">
                   Stated against SANGAM&rsquo;s own verdict, not against ground truth. The engine
                   is not entitled to grade itself and report the grade as fact.
                 </p>
@@ -1018,7 +1018,7 @@ export function Visualize() {
                   A two-dimensional projection of this neighbourhood was computed and measured,
                   then deliberately not drawn.
                 </p>
-                <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 mt-2.5 text-[12.5px]">
+                <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 mt-2.5 text-[12px]">
                   <dt className="text-[var(--color-text-2)]">Variance retained by two axes</dt>
                   <dd className="m-0 mono text-[var(--color-text)]">
                     {(map.projection.fidelity * 100).toFixed(1)}%
@@ -1039,7 +1039,7 @@ export function Visualize() {
                 <p className="text-[12px] leading-relaxed text-[var(--color-text-2)] mt-1">
                   {map.projection.note}
                 </p>
-                <p className="text-[11.5px] text-[var(--color-text-3)] mt-3 leading-relaxed">
+                <p className="text-[11px] text-[var(--color-text-3)] mt-3 leading-relaxed">
                   {map.projection.method}. Recomputed for every query, and reported whether or
                   not it flatters the result.
                 </p>

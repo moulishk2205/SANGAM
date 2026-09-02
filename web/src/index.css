@@ -152,7 +152,11 @@ body {
 .skip-link {
   position: absolute;
   left: var(--shell);
-  top: -100px;
+  /* Parked off-screen by transform, not by `top`. Changing `top` runs layout on
+     every frame; a translate composites. The element keeps its real position so
+     focus scrolling behaves. */
+  top: 1rem;
+  transform: translateY(calc(-100% - 3rem));
   z-index: 100;
   padding: 0.75rem 1.25rem;
   background: var(--color-paper);
@@ -162,10 +166,11 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   text-decoration: none;
-  transition: top 120ms var(--ease-out-quiet);
+  /* translate, not top — `top` runs layout, a transform composites. */
+  transition: transform 120ms var(--ease-out-quiet);
 }
 .skip-link:focus {
-  top: 1rem;
+  transform: translateY(0);
 }
 
 .visually-hidden {
@@ -283,6 +288,28 @@ body {
 
   --font-ui: "Public Sans Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* ── Shape ──────────────────────────────────────────────────────────────
+     One scale, three values. Containers, controls, pills. Radius drift — four
+     different values arrived at ad hoc — is one of the quieter ways an
+     interface reads as unconsidered. */
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+
+  /* ── Materials ──────────────────────────────────────────────────────────
+     Translucent chrome that content scrolls *under*, rather than opaque bars
+     that consume a fixed strip of the viewport. Saturation is raised with the
+     blur because backdrop-filter desaturates what it samples, and without the
+     correction the material reads as grey fog rather than as glass.
+
+     Two weights: chrome is the heavier structural layer, raised is the lighter
+     one for elements that sit above content. Never stack raised on chrome —
+     a light translucent surface over another destroys legibility. */
+  --material-chrome: rgba(245, 245, 247, 0.72);
+  --material-raised: rgba(255, 255, 255, 0.66);
+  --material-blur: saturate(180%) blur(20px);
+  --material-edge: rgba(255, 255, 255, 0.55);
 
   /* Emil's curves. The built-in CSS easings are too weak to read as
      deliberate, and ease-in is never used for UI because it delays the first

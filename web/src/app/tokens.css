@@ -25,6 +25,22 @@
   line-height: 1.5;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
+  /* Proportional figures make a column of numbers shimmer as digits change.
+     This screen exists to compare numbers, so figures are tabular everywhere and
+     opt out only in running prose, where proportional reads better. */
+  font-variant-numeric: tabular-nums;
+}
+
+.app p:not(.mono),
+.app li:not(.mono) {
+  font-variant-numeric: normal;
+}
+
+/* …but any element explicitly carrying data keeps them. */
+.app .mono,
+.app table,
+.app [data-num] {
+  font-variant-numeric: tabular-nums;
 }
 
 .app .mono {
@@ -34,14 +50,21 @@
 }
 
 /* ── Card ─────────────────────────────────────────────────────────────────
-   A tinted shadow, not a black one. Pure black shadow on a warm ground reads
-   as grey sludge; tinting it toward the ground hue keeps the card feeling
-   like it belongs to the page. */
+   No border. Apple separates surfaces with material and space; an outline plus
+   a shadow plus a fill is three separation devices doing one job, and it is the
+   single most recognisable "generated admin panel" tell. What remains is a lift:
+   a hairline top highlight where light catches the edge, and a tinted shadow.
+
+   Tinted, not black — pure black shadow on a warm ground reads as grey sludge.
+
+   Radius is one scale: 14px on containers, 10px on controls, full on pills. */
 .card {
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-radius: 10px;
-  box-shadow: 0 1px 2px rgba(58, 52, 40, 0.04);
+  border-radius: var(--radius-card);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(58, 52, 40, 0.05),
+    0 6px 16px -6px rgba(58, 52, 40, 0.08);
 }
 
 .card-interactive {
@@ -52,8 +75,10 @@
   cursor: pointer;
 }
 .card-interactive:hover {
-  border-color: var(--color-line-strong);
-  box-shadow: 0 2px 4px rgba(58, 52, 40, 0.06), 0 8px 20px rgba(58, 52, 40, 0.07);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 2px 6px rgba(58, 52, 40, 0.07),
+    0 14px 32px -10px rgba(58, 52, 40, 0.13);
   transform: translateY(-2px);
 }
 .card-interactive:active {
@@ -100,6 +125,10 @@
 .press:active:not(:disabled) {
   transform: scale(0.97);
 }
+/* A control pressed at its edge should compress toward that edge. Centre-origin
+   scaling on a wide button reads as the whole element shrinking rather than
+   being pushed. */
+.press { transform-origin: center; }
 .press:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -137,26 +166,11 @@
   background-size: 100% 1px;
 }
 
-/* ── Bars ─────────────────────────────────────────────────────────────── */
-.meter {
-  height: 4px;
-  border-radius: 999px;
-  background: var(--color-surface-3);
-  overflow: hidden;
-}
-.meter > span {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  transition: width 520ms var(--ease-out-strong);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .card-interactive,
   .press,
   .row,
   .link,
-  .meter > span,
   .spotlight::before {
     transition: none !important;
   }
@@ -170,6 +184,91 @@
   }
 }
 
+
+/* ── Materials ────────────────────────────────────────────────────────────
+   Chrome is a translucent layer that content scrolls *under*, not an opaque bar
+   that eats a strip of viewport. The bright top edge is the light catching the
+   material — it is what stops the surface reading as flat tinted plastic. */
+.material-chrome {
+  background: var(--material-chrome);
+  -webkit-backdrop-filter: var(--material-blur);
+  backdrop-filter: var(--material-blur);
+  border-bottom: 1px solid rgba(58, 52, 40, 0.06);
+}
+
+/* Scroll edge, not a hard divider.
+   A 1px rule under a sticky header is a line drawn where no edge exists. This
+   fades content out where it passes beneath the chrome instead — the separation
+   appears only where floating UI actually overlaps content. */
+.scroll-edge::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 100%;
+  height: 22px;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-bg) 78%, transparent),
+    transparent
+  );
+}
+
+/* ── Accessibility signals that materials make mandatory ──────────────────
+   Translucency is not free: two user settings exist specifically to opt out of
+   it, and shipping backdrop-filter without honouring them is a regression for
+   the people who set them. */
+@media (prefers-reduced-transparency: reduce) {
+  .material-chrome {
+    background: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .scroll-edge::after { display: none; }
+}
+
+@media (prefers-contrast: more) {
+  .material-chrome {
+    background: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom-color: var(--color-text);
+  }
+  .card {
+    box-shadow: none;
+    border: 1px solid var(--color-text-2);
+  }
+}
+
+/* ── Skeleton ─────────────────────────────────────────────────────────────
+   A background-position sweep, which composites. Two stops rather than a solid
+   fill, because a flat grey block reads as broken while a moving one reads as
+   pending. */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-3) 0%,
+    var(--color-surface-2) 40%,
+    var(--color-surface-3) 80%
+  );
+  background-size: 240% 100%;
+  animation: skeleton-sweep 1500ms var(--ease-in-out-strong) infinite;
+}
+
+@keyframes skeleton-sweep {
+  from { background-position: 140% 0; }
+  to   { background-position: -40% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Still visibly a placeholder, just not moving. */
+  .skeleton { animation: none; background: var(--color-surface-3); }
+}
+
+/* A scroll container that does not advertise itself. The rail scrolls on
+   narrow viewports; a visible scrollbar under four nav items reads as chrome
+   the design did not ask for. */
+.rail-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.rail-scroll::-webkit-scrollbar { display: none; }
 
 /* Utility used by screen-reader-only labels in this tree. */
 .app .sr-only {

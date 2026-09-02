@@ -171,7 +171,7 @@ export function Analyse() {
     <div className="grid gap-7">
       {/* ── 02 Input ───────────────────────────────────────────────────── */}
       <section aria-labelledby="inp">
-        <h1 id="inp" className="text-[24px] font-bold tracking-[-0.015em] mb-1">Analyse a material</h1>
+        <h1 id="inp" className="text-[26px] font-bold tracking-[-0.015em] mb-1">Analyse a material</h1>
         <p className="text-[14px] text-[var(--color-text-2)] mb-4">
           Any description, in any organisation&rsquo;s house style.
         </p>
@@ -182,7 +182,7 @@ export function Analyse() {
               id="aq" value={q} onChange={(e) => setQ(e.target.value)}
               autoComplete="off" spellCheck={false}
               placeholder="SS HEX BOLT M10 X 50"
-              className="mono flex-1 bg-transparent px-4 py-3.5 text-[14.5px] outline-none rounded-lg
+              className="mono flex-1 bg-transparent px-4 py-3.5 text-[14px] outline-none rounded-lg
                          placeholder:text-[var(--color-text-3)]"
             />
             <Button type="submit" disabled={busy || !q.trim()} icon={<ArrowRight size={15} weight="bold" />}>
@@ -193,7 +193,7 @@ export function Analyse() {
       </section>
 
       {err && (
-        <p role="alert" className="rounded-lg border px-4 py-3 text-[13.5px]"
+        <p role="alert" className="rounded-lg border px-4 py-3 text-[13px]"
            style={{ background: 'var(--color-distinct-soft)', borderColor: 'var(--color-distinct-line)', color: 'var(--color-distinct)' }}>
           {err}
         </p>
@@ -238,7 +238,7 @@ export function Analyse() {
                 {/* The measured time appears only once the engine has actually
                     answered, and it is always the engine's own figure. */}
                 {engineDone && res && (
-                  <span className="mono inline-flex items-center gap-1 text-[12.5px]"
+                  <span className="mono inline-flex items-center gap-1 text-[12px]"
                         style={{ color: phase === 'done' ? 'var(--color-brand)' : 'var(--color-text-2)' }}>
                     <Lightning size={12} weight="fill" aria-hidden="true" />
                     {res.elapsed_ms.toFixed(1)} ms
@@ -246,7 +246,7 @@ export function Analyse() {
                 )}
 
                 {done('decide') && res && (
-                  <span className="text-[12.5px] text-[var(--color-text-2)]">
+                  <span className="text-[12px] text-[var(--color-text-2)]">
                     {res.candidates.length} candidates · {matches} match · {vetoed} rejected
                   </span>
                 )}
@@ -273,7 +273,7 @@ export function Analyse() {
                           <Circle size={14} weight="regular" aria-hidden="true"
                                   style={{ color: 'var(--color-line-strong)' }} />
                         )}
-                        <span className="mono text-[10.5px] text-[var(--color-text-3)]">
+                        <span className="mono text-[11px] text-[var(--color-text-3)]">
                           {String(i + 1).padStart(2, '0')}
                         </span>
                         <span
@@ -309,7 +309,7 @@ export function Analyse() {
                   {/* Each block appears only once its stage has finished, so the
                       panel is the pipeline's output rather than a preview of it. */}
                   <p className="text-[12px] text-[var(--color-text-3)] mb-1">Input</p>
-                  <p className="mono text-[13.5px] mb-4 text-[var(--color-text-2)]">{res?.query ?? q}</p>
+                  <p className="mono text-[13px] mb-4 text-[var(--color-text-2)]">{res?.query ?? q}</p>
 
                   {done('normalise') && res && (
                     <motion.div
@@ -317,11 +317,11 @@ export function Analyse() {
                       transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     >
                       <p className="text-[12px] text-[var(--color-text-3)] mb-1">Normalized</p>
-                      <p className="mono text-[13.5px] mb-4">{res.normalised}</p>
+                      <p className="mono text-[13px] mb-4">{res.normalised}</p>
                       {res.item_name && (
                         <>
                           <p className="text-[12px] text-[var(--color-text-3)] mb-1">Item type</p>
-                          <p className="text-[13.5px] font-medium mb-4">{res.item_name}</p>
+                          <p className="text-[13px] font-medium mb-4">{res.item_name}</p>
                         </>
                       )}
                     </motion.div>
@@ -336,11 +336,11 @@ export function Analyse() {
                         initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.26, delay: 0.04 * i, ease: [0.23, 1, 0.32, 1] }}
                         className="rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-2)] px-3 py-2">
-                        <p className="text-[10.5px] uppercase tracking-[0.08em] text-[var(--color-text-3)]">
+                        <p className="text-[11px] uppercase tracking-[0.08em] text-[var(--color-text-3)]">
                           {a.code.replace(/_/g, ' ')}
                         </p>
                         <p className="mono text-[13px] font-medium mt-0.5">{a.value}</p>
-                        <p className="text-[10.5px] text-[var(--color-text-3)] mt-0.5">
+                        <p className="text-[11px] text-[var(--color-text-3)] mt-0.5">
                           {a.source}{a.inferred_unit ? ` · unit inferred` : ''}
                         </p>
                       </motion.div>
@@ -352,7 +352,7 @@ export function Analyse() {
                   {/* Placeholder while earlier stages are still running. Sized
                       to the content it replaces so nothing jumps when it fills. */}
                   {!done('extract') && (
-                    <p className="text-[12.5px] text-[var(--color-text-3)]">
+                    <p className="text-[12px] text-[var(--color-text-3)]">
                       {stage >= 0 ? `${STAGES[stage].label}…` : 'Waiting for the engine…'}
                     </p>
                   )}
@@ -396,7 +396,7 @@ export function Analyse() {
                         <div className="flex items-start justify-between gap-3 mb-1.5">
                           <div className="flex items-center gap-1.5">
                             <OrgChip org={c.org} />
-                            <span className="mono text-[11.5px] text-[var(--color-text-3)]">{c.org_code}</span>
+                            <span className="mono text-[11px] text-[var(--color-text-3)]">{c.org_code}</span>
                           </div>
                           {done('decide') ? (
                             <span className="mono text-[15px] font-semibold"
@@ -415,9 +415,9 @@ export function Analyse() {
                           {done('decide') ? (
                             <DecisionBadge decision={c.decision} size="sm" />
                           ) : (
-                            <span className="text-[11.5px] text-[var(--color-text-3)]">Evaluating</span>
+                            <span className="text-[11px] text-[var(--color-text-3)]">Evaluating</span>
                           )}
-                          <span className="text-[11.5px] text-[var(--color-text-3)]">
+                          <span className="text-[11px] text-[var(--color-text-3)]">
                             semantic <span className="mono">{c.semantic_score.toFixed(3)}</span>
                           </span>
                         </div>
@@ -446,7 +446,7 @@ export function Analyse() {
                       <div className="px-4 py-3 border-b border-[var(--color-line)] flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <p className="mono text-[13px]">{active.candidate_material}</p>
-                          <p className="text-[11.5px] text-[var(--color-text-3)] mt-0.5">
+                          <p className="text-[11px] text-[var(--color-text-3)] mt-0.5">
                             {active.org} · {active.org_code} · {active.provenance.toLowerCase().replace(/_/g, ' ')}
                           </p>
                         </div>
@@ -490,7 +490,7 @@ export function Analyse() {
                                 <th scope="row" className="px-3 py-2.5 text-[13px] font-medium text-[var(--color-text-2)] whitespace-nowrap">
                                   {r.attribute}
                                   {r.criticality === 'CRITICAL' && (
-                                    <span className="ml-1.5 rounded px-1 py-px text-[9.5px] font-bold tracking-wide"
+                                    <span className="ml-1.5 rounded px-1 py-px text-[10px] font-bold tracking-wide"
                                           style={{ background: 'var(--color-surface-3)', color: 'var(--color-text-3)' }}>
                                       CRITICAL
                                     </span>

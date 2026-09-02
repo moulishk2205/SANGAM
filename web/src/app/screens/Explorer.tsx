@@ -4,6 +4,7 @@ import { motion } from 'motion/react'
 import { MagnifyingGlass, ArrowRight, Buildings } from '@phosphor-icons/react'
 import { api, readableError, type CanonicalSummary } from '../api'
 import { Card, SectionTitle, NmcTag, OrgChip, DemoNote } from '../components/ui'
+import { ListSkeleton } from '../components/Skeleton'
 
 /**
  * 06 — Standardization explorer.
@@ -16,6 +17,10 @@ import { Card, SectionTitle, NmcTag, OrgChip, DemoNote } from '../components/ui'
 export function Explorer() {
   const [q, setQ] = useState('')
   const [rows, setRows] = useState<CanonicalSummary[]>([])
+  // Without this the empty state renders on first paint — the list is [] before
+  // the fetch resolves, so the screen said "No materials match" about a query
+  // the user had not typed.
+  const [loading, setLoading] = useState(true)
   const [meta, setMeta] = useState({ total: 0, matched: 0 })
   const [err, setErr] = useState<string | null>(null)
 
@@ -23,6 +28,7 @@ export function Explorer() {
     const t = setTimeout(() => {
       api.canonicalList(q, 30)
         .then((d) => { setRows(d.results); setMeta({ total: d.total, matched: d.matched }) })
+        .finally(() => setLoading(false))
         .catch((e) => setErr(readableError(e)))
     }, q ? 180 : 0)          // debounce typing, but load immediately on mount
     return () => clearTimeout(t)
@@ -31,7 +37,7 @@ export function Explorer() {
   return (
     <div className="grid gap-5">
       <div>
-        <h1 className="text-[24px] font-bold tracking-[-0.015em] mb-1">Standardized materials</h1>
+        <h1 className="text-[26px] font-bold tracking-[-0.015em] mb-1">Standardized materials</h1>
         <p className="text-[14px] text-[var(--color-text-2)]">
           {meta.total.toLocaleString()} canonical materials, each holding the source codes of every
           organisation that described it.
@@ -55,7 +61,7 @@ export function Explorer() {
       </Card>
 
       {err && (
-        <p role="alert" className="rounded-lg border px-4 py-3 text-[13.5px]"
+        <p role="alert" className="rounded-lg border px-4 py-3 text-[13px]"
            style={{ background: 'var(--color-distinct-soft)', borderColor: 'var(--color-distinct-line)', color: 'var(--color-distinct)' }}>
           {err}
         </p>
@@ -83,7 +89,7 @@ export function Explorer() {
                   <span className="flex items-center gap-1">
                     {r.orgs.map((o) => <OrgChip key={o} org={o} />)}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-[11.5px] text-[var(--color-text-3)]">
+                  <span className="inline-flex items-center gap-1 text-[11px] text-[var(--color-text-3)]">
                     <Buildings size={12} weight="fill" aria-hidden="true" />
                     {r.source_count} records
                   </span>
@@ -94,7 +100,9 @@ export function Explorer() {
         ))}
       </ul>
 
-      {rows.length === 0 && !err && (
+      {loading && rows.length === 0 && <ListSkeleton rows={8} />}
+
+      {!loading && rows.length === 0 && !err && (
         <Card className="p-8 text-center">
           <p className="text-[14px] font-medium">No materials match &ldquo;{q}&rdquo;</p>
           <p className="text-[13px] text-[var(--color-text-3)] mt-1">
