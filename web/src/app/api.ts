@@ -5,7 +5,27 @@
  * computed server-side by MatchingEngine, which is what makes "no mocked AI"
  * enforceable instead of merely claimed.
  */
-const BASE = import.meta.env.DEV ? 'http://localhost:8001' : ''
+/**
+ * Where the engine is.
+ *
+ * Empty by default, which means "same origin" — every call below becomes a
+ * relative /api/… request that the Vite dev server proxies to :8001 (see
+ * vite.config.ts), and that a production build serves from wherever it is
+ * hosted. The browser therefore never makes a cross-origin request, so there is
+ * no preflight to satisfy and the session cookie is first-party.
+ *
+ * This used to be `import.meta.env.DEV ? 'http://localhost:8001' : ''`, which
+ * broke the moment the app was opened through a forwarded port: the page came
+ * from the tunnel, and the API call went to the *viewer's* own machine.
+ * Replacing it with a hardcoded tunnel URL in .env.local then broke localhost
+ * in the other direction, because one static value cannot be right for two
+ * origins at once. A relative path is right for both.
+ *
+ * VITE_API_BASE still overrides, for a genuinely separate backend origin. Set
+ * it only when you mean it — pointing it at a dev-tunnel URL reintroduces both
+ * problems, and tunnel IDs expire.
+ */
+const BASE = import.meta.env.VITE_API_BASE ?? ''
 
 export type Verdict = 'AGREE' | 'DISAGREE' | 'UNKNOWN'
 export type Decision = 'MATCH' | 'NEAR_MATCH' | 'REVIEW_REQUIRED' | 'DISTINCT'

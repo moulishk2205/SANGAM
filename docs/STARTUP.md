@@ -440,6 +440,46 @@ On Windows: `netstat -ano | findstr :5173` then `taskkill /PID <pid> /F`.
 
 ---
 
+## 9b. Sharing it — VS Code port forwarding / dev tunnels
+
+**Forward port 5173 only.** Not 8001.
+
+The dev server proxies everything under `/api` to the engine on 127.0.0.1:8001
+(`web/vite.config.ts`), so the browser only ever talks to one origin. Forwarding
+the second port is not just unnecessary, it actively creates three problems that
+forwarding one port does not have: a CORS allowlist to maintain, a session
+cookie that becomes cross-site, and a tunnel URL that has to be written into
+config files — where it expires.
+
+1. In VS Code: **Ports** → **Forward a Port** → `5173`
+2. Right-click the row → **Port Visibility** → **Public**
+3. Open the generated `https://<id>-5173.<region>.devtunnels.ms` URL
+
+Sign-in works through it with no configuration. Nothing in the repository
+contains a tunnel URL, so a regenerated tunnel ID changes nothing.
+
+`server.allowedHosts` in `web/vite.config.ts` permits `.devtunnels.ms` and the
+Codespaces domains. Vite rejects unknown `Host` headers by default as
+DNS-rebinding protection, and that protection stays on for every other host —
+verified: a request with `Host: evil.example.com` still gets `403`.
+
+### If you must expose the engine directly
+
+Only if something outside the browser needs to reach the API. Forward 8001 as
+well, then start the engine with the frontend's origin on the allowlist:
+
+```bash
+SANGAM_ALLOWED_ORIGINS="https://<id>-5173.<region>.devtunnels.ms" python -m uvicorn src.nmc.api:app --port 8001 --reload
+```
+
+No trailing slash — an origin with one never matches. The session cookie
+switches itself to `SameSite=None; Secure` when it detects a cross-site
+request over https, which browsers require and which is why this only works
+over https. Leave `VITE_API_BASE` unset even then: the app should still use the
+proxy, or the browser is back to a cross-site cookie for no benefit.
+
+---
+
 ## 10. Troubleshooting
 
 | Symptom | Cause | Fix |
@@ -451,6 +491,9 @@ On Windows: `netstat -ano | findstr :5173` then `taskkill /PID <pid> /F`.
 | Review queue is empty | you approved all 22 seeded proposals | delete `sangam.db*` and restart |
 | `ModuleNotFoundError: nmc` | venv not activated, or wrong cwd | `source .venv/bin/activate`, run from repo root |
 | Landing page scroll feels broken | GSAP/Lenis need a real reload after a hot edit | hard-refresh the tab |
+| Sign-in fails with "Is the engine running?" but the page loads | the frontend is calling a different host than it was served from — almost always a stale `VITE_API_BASE` in `web/.env.local` | delete `web/.env.local` and restart Vite; the default relative path is correct for both localhost and a tunnel |
+| Worked yesterday through a tunnel, 404s today | dev-tunnel IDs are ephemeral and the old URL is gone | forward 5173 again and use the new URL; nothing in the repo needs changing |
+| `403` from Vite through a forwarded port | the tunnel host is not in `server.allowedHosts` | add its suffix in `web/vite.config.ts` |
 | Sign-in accepts nothing | database not seeded | check the boot log; delete `sangam.db*` and restart |
 
 ---

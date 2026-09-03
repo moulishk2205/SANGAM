@@ -22,6 +22,7 @@ from __future__ import annotations
 import csv
 import io
 import secrets
+import os
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -92,10 +93,36 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="SANGAM — Material Intelligence (SIH26099)", lifespan=lifespan)
 
+# ── CORS ───────────────────────────────────────────────────────────────────
+#
+# In the normal setup this middleware never fires, because the Vite dev server
+# proxies /api to this process and the browser makes a same-origin request. The
+# allowlist is here for the case where the frontend genuinely is served from
+# another origin.
+#
+# It is read from the environment rather than hardcoded. A dev-tunnel URL was
+# pasted in here once and had already expired by the time it was debugged — the
+# tunnel ID is ephemeral, so a literal in source is a literal with a shelf life.
+#
+#   SANGAM_ALLOWED_ORIGINS="https://abc-5173.devtunnels.ms,https://app.example.in"
+#
+# Never "*": with allow_credentials the browser rejects a wildcard outright, and
+# it would let any site on the internet make authenticated calls on a signed-in
+# user's behalf.
+_DEV_ORIGINS = [
+    "http://localhost:5173", "http://localhost:5174",
+    "http://localhost:4173", "http://localhost:4174",
+    "http://127.0.0.1:5173", "http://127.0.0.1:4173",
+]
+_EXTRA_ORIGINS = [
+    o.strip().rstrip("/")            # a trailing slash makes an origin never match
+    for o in os.environ.get("SANGAM_ALLOWED_ORIGINS", "").split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174",
-                   "http://localhost:4173", "http://localhost:4174"],
+    allow_origins=_DEV_ORIGINS + _EXTRA_ORIGINS,
     allow_credentials=True,   # the session cookie needs this
     allow_methods=["*"],
     allow_headers=["*"],
@@ -159,13 +186,65 @@ def _user_out(u: User, db: DbSession) -> dict:
     }
 
 
+def _cookie_flags(request: Request) -> dict:
+    """
+    Decide SameSite and Secure from the request, instead of assuming.
+
+    A single hardcoded `samesite="lax"` cannot be right for both deployments:
+
+      SAME-ORIGIN (the normal path — Vite proxies /api to this process)
+        The cookie is first-party. `Lax` is correct and is the safer choice, so
+        that is what is used. Nothing needs relaxing for the demo to work.
+
+      CROSS-SITE (frontend on one host, engine on another — two forwarded
+      ports, or a separately deployed API)
+        The browser will not attach a `Lax` cookie to a fetch() aimed at a
+        different site, so the session silently never arrives and every call
+        looks like "not signed in". `SameSite=None` is REQUIRED here; it is not
+        a workaround. Browsers additionally refuse `None` unless `Secure` is
+        set, which is why the two are decided together.
+
+    `Secure` is set whenever the browser is on https, which is read from
+    X-Forwarded-Proto first — behind the Vite proxy or a tunnel this process
+    sees plain http even though the browser does not.
+
+    The CSRF exposure that `SameSite=None` would normally open is closed
+    elsewhere: every mutating endpoint is JSON-only, so a cross-site form POST
+    cannot reach one without a preflight, and preflight is answered only for the
+    origins in the allowlist above.
+    """
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme).split(",")[0].strip()
+    https = proto == "https"
+
+    origin = request.headers.get("origin")
+    cross_site = False
+    if origin:
+        from urllib.parse import urlparse
+        o = urlparse(origin)
+        # Compare against the host the browser actually addressed, which behind
+        # a proxy is X-Forwarded-Host rather than the socket's own idea of it.
+        host = (request.headers.get("x-forwarded-host")
+                or request.headers.get("host") or "").split(",")[0].strip()
+        cross_site = bool(host) and o.netloc != host
+
+    if cross_site and https:
+        return {"samesite": "none", "secure": True}
+    if cross_site and not https:
+        # Cannot be honoured: `None` without `Secure` is rejected by every
+        # current browser, and there is no https to attach it to. Emit the safe
+        # value; the caller should front the API with TLS or use the proxy.
+        return {"samesite": "lax", "secure": False}
+    return {"samesite": "lax", "secure": https}
+
+
 class LoginRequest(BaseModel):
     email: str = Field(min_length=3, max_length=200)
     password: str = Field(min_length=1, max_length=200)
 
 
 @app.post("/api/auth/login")
-def login(req: LoginRequest, response: Response, db: DbSession = Depends(get_session)) -> dict:
+def login(req: LoginRequest, request: Request, response: Response,
+          db: DbSession = Depends(get_session)) -> dict:
     user = find_user_by_email(db, req.email)
     # Same message either way: distinguishing "no such user" from "wrong
     # password" tells an attacker which half they got right.
@@ -173,8 +252,9 @@ def login(req: LoginRequest, response: Response, db: DbSession = Depends(get_ses
         fail(401, "bad_credentials", "That email and password do not match an account.")
     s = open_session(db, user)
     service.audit(db, actor=user, action="auth.login")
-    response.set_cookie(SESSION_COOKIE, s.token, httponly=True, samesite="lax",
-                        max_age=int((s.expires_at - utcnow()).total_seconds()))
+    response.set_cookie(SESSION_COOKIE, s.token, httponly=True, path="/",
+                        max_age=int((s.expires_at - utcnow()).total_seconds()),
+                        **_cookie_flags(request))
     return {"user": _user_out(user, db), "expires_at": s.expires_at.isoformat()}
 
 
@@ -183,7 +263,9 @@ def logout(request: Request, response: Response, db: DbSession = Depends(get_ses
     token = request.cookies.get(SESSION_COOKIE)
     if token:
         revoke_session(db, token)
-    response.delete_cookie(SESSION_COOKIE)
+    # Attributes must match the ones it was set with, or the browser treats
+    # this as a different cookie and quietly keeps the original.
+    response.delete_cookie(SESSION_COOKIE, path="/", **_cookie_flags(request))
     return {"ok": True}
 
 
