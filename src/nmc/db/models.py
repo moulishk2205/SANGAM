@@ -178,6 +178,16 @@ class CanonicalMaterial(Base):
     canonical_text: Mapped[str] = mapped_column(Text, nullable=False)
     attributes: Mapped[dict] = mapped_column(JSON, default=dict)
 
+    # Generated from `attributes` by standard/describe.py, never inherited from a
+    # member record. Stored rather than computed on read because it is the
+    # procurement-facing text — it appears on tenders and in exports, and it must
+    # be identical everywhere it is quoted.
+    standard_description: Mapped[str] = mapped_column(Text, default="")
+
+    # Commodity family, denormalised from the item name. Equivalence grouping and
+    # the review scope both filter on it, and both are hot paths.
+    family: Mapped[str] = mapped_column(String(40), default="", index=True)
+
     item_class: Mapped[str] = mapped_column(String(60), default="GENERAL", index=True)
     spec_standard: Mapped[str] = mapped_column(String(80), default="")
     spec_revision: Mapped[str] = mapped_column(String(40), default="")
@@ -322,6 +332,47 @@ class Release(Base):
     promoted_by: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     notes: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ProcurementRecord(Base):
+    """
+    One historical purchase line, as a CPSE's ERP would hold it.
+
+    The problem statement asks for analysis of "historical procurement data",
+    and without it the platform can prove two CPSEs hold the same material but
+    not that anything is gained by noticing. Demand aggregation — the impact the
+    statement leads with — is arithmetic over this table.
+
+    Deliberately keyed to the SOURCE RECORD, not to the canonical material. A
+    purchase happened against a CPSE's own code at a point in time; attributing
+    it directly to a canonical identity would silently rewrite history every
+    time a mapping was re-approved. The canonical is reached through the live
+    mapping, which is exactly how a real ERP reconciliation works.
+
+    Money is stored in paise as an integer. Float rupees accumulate error across
+    a few thousand rows and a procurement figure that does not foot is a
+    procurement figure nobody trusts.
+    """
+    __tablename__ = "procurement_records"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organisations.id"), index=True)
+    source_record_id: Mapped[str] = mapped_column(
+        ForeignKey("source_records.id"), nullable=False, index=True)
+
+    quantity: Mapped[float] = mapped_column(Float, nullable=False)
+    uom: Mapped[str] = mapped_column(String(12), default="EA")
+    unit_price_paise: Mapped[int] = mapped_column(Integer, nullable=False)
+    line_value_paise: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    ordered_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    supplier: Mapped[str] = mapped_column(String(120), default="")
+    plant: Mapped[str] = mapped_column(String(80), default="")
+    service_class: Mapped[str] = mapped_column(String(40), default="GENERAL", index=True)
+    po_number: Mapped[str] = mapped_column(String(40), default="")
+
+    # Synthetic demonstration data must be able to say so about itself.
+    provenance: Mapped[str] = mapped_column(String(40), default="SYNTHETIC")
 
 
 class IngestJob(Base):

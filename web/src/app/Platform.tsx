@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Link, useLocation } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
-  House, MagnifyingGlass, Cube, ArrowLeft, Stack, Graph, ClipboardText, Seal,
+  House, MagnifyingGlass, Cube, ArrowLeft, Stack, Graph, ClipboardText, Seal, ChartLineUp,
   SignOut, SignIn as SignInIcon,
 } from '@phosphor-icons/react'
 import './tokens.css'
@@ -18,6 +18,7 @@ import { SignIn } from './screens/SignIn'
 import { Review } from './screens/Review'
 import { Ledger } from './screens/Ledger'
 import { Account } from './screens/Account'
+import { Procurement } from './screens/Procurement'
 import { SessionProvider, useSession } from './Session'
 import { RequireAuth } from './RequireAuth'
 
@@ -37,6 +38,7 @@ const NAV = [
   { to: '/platform/analyse',       label: 'Analyse',       Icon: MagnifyingGlass, end: false, needsReview: false },
   { to: '/platform/explorer',      label: 'Explorer',      Icon: Stack,           end: false, needsReview: false },
   { to: '/platform/visualization', label: 'Relationships', Icon: Graph,           end: false, needsReview: false },
+  { to: '/platform/procurement',   label: 'Procurement',   Icon: ChartLineUp,     end: false, needsReview: false },
   // Hidden rather than disabled when signed out. A rail full of things you
   // cannot use is worse than a shorter one, and the server refuses regardless —
   // the nav is a convenience, never the enforcement.
@@ -222,6 +224,7 @@ function Chrome() {
                 <Route path="/platform/visualization" element={<G><Visualize /></G>} />
                 <Route path="/platform/review" element={<G><Review /></G>} />
                 <Route path="/platform/ledger" element={<G><Ledger /></G>} />
+                <Route path="/platform/procurement" element={<G><Procurement /></G>} />
                 <Route path="/platform/account" element={<G><Account /></G>} />
 
                 {/* Gated too. An unknown path should not be a way to learn

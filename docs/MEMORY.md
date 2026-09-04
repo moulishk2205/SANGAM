@@ -76,6 +76,12 @@ sih26099/
 │       │   └── screens/        Home Analyse Explorer Visualize Canonical
 │       │                       SignIn Review Ledger Account NotFound
 │       └── index.css         design tokens, light + dark
+│   ├── standard/               THE NATIONAL CODE + STANDARD DESCRIPTION
+│   │   ├── codes.py            FSC-structured NMC, deterministic + checkable
+│   │   └── describe.py         canonical description from attributes
+│   ├── equivalence.py          functional equivalence, ABOVE identity
+│   ├── procure.py              historical demand + aggregation opportunity
+│   ├── integration/schema.py   import/export contracts, SAP field mappings
 ├── scripts/evaluate.py       the measurement harness — real numbers only
 ├── tests/                    24 tests
 ├── migrations/               Alembic
@@ -414,6 +420,12 @@ Objection ledger · release-gate replay · dictionary desk · evidence tiers ·
 demand window · emergency lane · MPN fast path ·
 validation against real CPSE data · CI · Docker · rate limiting · CSRF tokens ·
 password reset · account self-registration.
+
+**A LIVE SAP CONNECTOR.** There is no RFC, BAPI, IDoc or OData client anywhere
+in this repository. What exists is a declared contract with every field mapped
+to its SAP MM / MM-PUR counterpart (MATNR, MAKTX, MEINS, MTART, EBELN, MENGE,
+NETPR). The accurate phrase is **SAP integration ready**, and that is what the
+UI and the schema endpoint say. Do not upgrade the claim in a pitch.
 
 ---
 

@@ -83,7 +83,7 @@ export function Explorer() {
                 </div>
                 <p className="text-[14px] font-semibold leading-snug">{r.item_name}</p>
                 <p className="mono text-[12px] text-[var(--color-text-2)] mt-1 leading-snug flex-1">
-                  {r.canonical_text}
+                  {r.standard_description || r.canonical_text}
                 </p>
                 <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-[var(--color-line)]">
                   <span className="flex items-center gap-1">

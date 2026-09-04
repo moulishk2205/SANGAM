@@ -14,20 +14,26 @@ on every startup.
 """
 from __future__ import annotations
 
+import random
 import secrets
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
 from ..authz import hash_password
+from ..extract.templates import family_for
+from ..standard import build_nmc, standard_description
+from ..standard.codes import _ALPHABET
 from ..demo.corpus import build_corpus
 from ..extract.templates import ITEM_NAMES
 from ..match.engine import MODEL_VERSION, MatchingEngine
 from ..normalise.text import GAZETTEER_VERSION
 from ..extract.templates import CONFIG_VERSION
+from ..types import MaterialRecord
 from .models import (
     CanonicalMaterial, ItemClassRule, Mapping, MappingStatus, Organisation,
-    Release, Role, SourceRecord, User,
+    ProcurementRecord, Release, Role, SourceRecord, User,
 )
 
 # The four invented CPSEs, named generically so nobody mistakes them for real
@@ -126,20 +132,41 @@ def seed(db: DbSession, *, limit_specs: int = 600, variants: int = 3) -> dict:
         groups.setdefault(truth[r.id], []).append(r)
 
     canon_by_key: dict[str, str] = {}
+    taken: set[str] = set()
     for key, recs in sorted(groups.items()):
         head = recs[0]
-        seq = 18426 + sum(ord(c) for c in key) % 60000
-        nmc = f"NMC-{seq:08d}"
-        while db.get(CanonicalMaterial, nmc) is not None or nmc in canon_by_key.values():
-            seq += 1
-            nmc = f"NMC-{seq:08d}"
         item = head.item_name or "UNCLASSIFIED"
+        attrs = {c: str(a.value) for c, a in head.attributes.items() if a.known}
+        fam = family_for(item)
+
+        # The national code is DERIVED, not counted. Same attributes anywhere,
+        # same code — which is what makes it reproducible and checkable offline.
+        nmc = build_nmc(item, fam, attrs)
+        if nmc in taken or db.get(CanonicalMaterial, nmc) is not None:
+            # A genuine collision: two materials in the same class, material and
+            # size whose discriminators agree. Rare, and resolved against storage
+            # because only storage knows what exists. The generator itself stays
+            # pure. Probing the check character keeps the code well-formed.
+            base, suffix = nmc.rsplit("-", 1)
+            for probe in range(1, 1000):
+                cand = f"{base}-{suffix[:2]}{_ALPHABET[probe % 32]}"
+                if cand not in taken and db.get(CanonicalMaterial, cand) is None:
+                    nmc = cand
+                    break
+
         db.add(CanonicalMaterial(
-            id=nmc, item_name=item, canonical_text=head.normalised,
-            attributes={c: str(a.value) for c, a in head.attributes.items() if a.known},
+            id=nmc, item_name=item,
+            canonical_text=head.normalised,
+            # Generated from the attributes, never inherited from whichever
+            # member record happened to sort first. That inheritance made one
+            # CPSE's house style the national description by accident.
+            standard_description=standard_description(item, attrs),
+            attributes=attrs,
+            family=fam,
             item_class=_CLASS_BY_ITEM.get(item, "GENERAL"),
         ))
         canon_by_key[key] = nmc
+        taken.add(nmc)
     db.flush()
 
     for r in records:
@@ -174,7 +201,6 @@ def seed(db: DbSession, *, limit_specs: int = 600, variants: int = 3) -> dict:
     # identity keeps an approved anchor. A proposal against an identity that
     # exists is the real shape of the work; a proposal that is the sole member
     # of its own group is a new identity, which is a different workflow.
-    from ..extract.templates import family_for
 
     _QUEUE_PLAN = [
         ("CPSE-A", "fastener", 6),
@@ -222,10 +248,25 @@ def seed(db: DbSession, *, limit_specs: int = 600, variants: int = 3) -> dict:
             confidence=held[r.id] if proposed else 1.0,
             decided_by_engine="ENGINE" if proposed else "SEED",
         ))
+    db.flush()
+
+    # ── the equivalence cohort ─────────────────────────────────────────────
+    # The generator produces very few graded fasteners, so functional
+    # equivalence would have almost nothing to act on. These pairs are added
+    # deliberately: identical in every dimension, differing ONLY in property
+    # class, and held by different organisations. That is the exact shape the
+    # aggregation layer exists to find, and without it the capability would be
+    # real but undemonstrable.
+    n_equiv = _seed_equivalence_cohort(db, engine)
+
+    # ── procurement history ────────────────────────────────────────────────
+    n_po = _seed_procurement(db)
     db.commit()
 
     return {
         "seeded": True,
+        "equivalence_pairs": n_equiv,
+        "procurement_lines": n_po,
         "organisations": len(ORGS),
         "users": len(USERS),
         "class_rules": len(CLASS_RULES),
@@ -234,3 +275,134 @@ def seed(db: DbSession, *, limit_specs: int = 600, variants: int = 3) -> dict:
         "item_names": len(ITEM_NAMES),
         "awaiting_review": len(held),
     }
+
+
+# ── the equivalence cohort ─────────────────────────────────────────────────
+
+# Pairs that differ ONLY in property class, held by different CPSEs. Chosen so
+# that in each pair one grade genuinely covers the other on both capability
+# axes, which is what makes them aggregatable — and so that one pair is in
+# PRESSURE service and one in SOUR, to show the layer refusing to rule.
+_EQUIV_COHORT = [
+    # (dia, length, org_a, grade_a, org_b, grade_b, service_class)
+    (10, 50, "CPSE-A", "A2-70", "CPSE-B", "A4-80", "GENERAL"),
+    (12, 60, "CPSE-A", "A2-70", "CPSE-C", "A4-80", "GENERAL"),
+    (16, 70, "CPSE-B", "A2-50", "CPSE-D", "A2-80", "GENERAL"),
+    (20, 80, "CPSE-A", "A2-70", "CPSE-C", "A4-80", "PRESSURE"),
+    (24, 90, "CPSE-B", "A2-70", "CPSE-D", "A4-80", "SOUR"),
+]
+
+
+def _seed_equivalence_cohort(db: DbSession, engine: MatchingEngine) -> int:
+    """
+    Add graded fastener pairs and their canonical identities.
+
+    Each side gets its own canonical identity, because they ARE different
+    materials — the point is precisely that identity keeps them apart while
+    equivalence brings their demand together.
+    """
+    from .models import ItemClassRule  # noqa: F401  (kept for class validity)
+
+    made = 0
+    for i, (dia, length, org_a, grade_a, org_b, grade_b, svc) in enumerate(_EQUIV_COHORT):
+        for side, (org, grade) in enumerate(((org_a, grade_a), (org_b, grade_b))):
+            rid = f"EQV{i:02d}{side}"
+            if db.get(SourceRecord, rid) is not None:
+                continue
+            text = (f"SS HEX BOLT M{dia} X {length} GR {grade}")
+            rec = engine.prepare(MaterialRecord(
+                id=rid, raw_description=text, org=org,
+                org_code=f"EQ-{i:03d}{side}"))
+            attrs = {c: str(a.value) for c, a in rec.attributes.items() if a.known}
+            # The grade the description states must survive into the attributes;
+            # if the extractor missed it the pair proves nothing, so assert it.
+            attrs["GRADE"] = grade
+            item = rec.item_name or "BOLT, MACHINE"
+            fam = family_for(item)
+
+            nmc = build_nmc(item, fam, attrs)
+            if db.get(CanonicalMaterial, nmc) is None:
+                db.add(CanonicalMaterial(
+                    id=nmc, item_name=item, canonical_text=rec.normalised,
+                    standard_description=standard_description(item, attrs),
+                    attributes=attrs, family=fam,
+                    item_class=svc if svc != "GENERAL" else "GENERAL"))
+            db.add(SourceRecord(
+                id=rid, org_id=org, org_code=f"EQ-{i:03d}{side}",
+                raw_description=text, normalised=rec.normalised,
+                item_name=item, attributes=attrs,
+                provenance="SYNTHETIC_EQUIVALENCE_COHORT"))
+            db.flush()
+            db.add(Mapping(
+                id=f"map-{secrets.token_hex(8)}", source_record_id=rid,
+                canonical_id=nmc, status=MappingStatus.APPROVED,
+                confidence=1.0, decided_by_engine="SEED"))
+            made += 1
+    db.flush()
+    return made
+
+
+# ── procurement history ────────────────────────────────────────────────────
+
+_SUPPLIERS = ["Bharat Fasteners Ltd", "Deccan Alloys Pvt Ltd", "Kalyani Forge Works",
+              "Southern Valve & Fitting Co", "Meridian Industrial Supply"]
+_PLANTS = {"CPSE-A": "Manali Refinery", "CPSE-B": "Trunk Pipeline Div",
+           "CPSE-C": "Petrochem West", "CPSE-D": "Terminal East"}
+
+# Indicative unit prices in paise, by family. Order-of-magnitude realistic for
+# Indian industrial supply; they are demonstration figures and are labelled as
+# such wherever they surface.
+_BASE_PAISE = {"fastener": 4200, "bearing": 185000, "valve": 2450000,
+               "gasket": 38000, "flange": 720000, "pipe": 155000}
+
+
+def _seed_procurement(db: DbSession, *, months: int = 30) -> int:
+    """
+    Generate purchase history against EXISTING source records.
+
+    Deterministic (seeded RNG) so the analytics figures are stable across
+    restarts — a dashboard whose numbers move on every reboot is one nobody
+    believes. Every row is stamped SYNTHETIC.
+
+    Prices vary per organisation by a fixed factor rather than randomly: that is
+    what creates a genuine, explainable price spread for the aggregation layer
+    to report, instead of noise that averages away.
+    """
+    if db.scalar(select(func.count()).select_from(ProcurementRecord)):
+        return 0
+
+    rng = random.Random(20260904)
+    # A stable per-CPSE price posture — some negotiate better than others.
+    org_factor = {"CPSE-A": 1.00, "CPSE-B": 1.12, "CPSE-C": 0.94, "CPSE-D": 1.06}
+
+    rows = db.execute(
+        select(SourceRecord.id, SourceRecord.org_id, SourceRecord.item_name,
+               CanonicalMaterial.family, CanonicalMaterial.item_class)
+        .join(Mapping, Mapping.source_record_id == SourceRecord.id)
+        .join(CanonicalMaterial, CanonicalMaterial.id == Mapping.canonical_id)
+        .where(Mapping.status == MappingStatus.APPROVED)
+    ).all()
+
+    made = 0
+    base_day = datetime(2024, 3, 1, tzinfo=timezone.utc)
+    for rid, org, item_name, family, item_class in rows:
+        # Not every code is bought every period; roughly half see any activity.
+        if rng.random() < 0.45:
+            continue
+        base = _BASE_PAISE.get(family or "fastener", 5000)
+        for _ in range(rng.randint(1, 4)):
+            day = base_day + timedelta(days=rng.randint(0, months * 30))
+            unit = int(base * org_factor.get(org, 1.0) * rng.uniform(0.92, 1.08))
+            qty = float(rng.choice([25, 50, 100, 250, 500, 1000, 2000])
+                        if family == "fastener" else rng.choice([2, 5, 10, 20, 40]))
+            made += 1
+            db.add(ProcurementRecord(
+                id=f"po-{secrets.token_hex(8)}", org_id=org, source_record_id=rid,
+                quantity=qty, uom="EA", unit_price_paise=unit,
+                line_value_paise=int(unit * qty), ordered_on=day,
+                supplier=rng.choice(_SUPPLIERS), plant=_PLANTS.get(org, ""),
+                service_class=item_class or "GENERAL",
+                po_number=f"PO/{org}/{day.year}/{rng.randint(1000, 9999)}",
+                provenance="SYNTHETIC"))
+    db.flush()
+    return made

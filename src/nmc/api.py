@@ -22,6 +22,7 @@ from __future__ import annotations
 import csv
 import io
 import secrets
+import json
 import os
 import time
 from contextlib import asynccontextmanager
@@ -39,6 +40,7 @@ from .authz import (
     verify_password,
 )
 from .db.models import (
+    ProcurementRecord,
     CanonicalMaterial, Decision, IngestJob, ItemClassRule, JobStatus, Mapping,
     MappingStatus, Organisation, Role, SourceRecord, User, utcnow,
 )
@@ -430,7 +432,8 @@ def canonical_list(
         "next_cursor": rows[-1].id if more and rows else None,
         "results": [
             {"nmc_id": r.id, "item_name": r.item_name, "canonical_text": r.canonical_text,
-             "item_class": r.item_class,
+             "standard_description": r.standard_description or r.canonical_text,
+             "family": r.family, "item_class": r.item_class,
              "attributes": [{"code": k, "label": k.replace("_", " ").title(), "value": v}
                             for k, v in (r.attributes or {}).items()],
              "source_count": counts[r.id][0], "org_count": len(counts[r.id][1]),
@@ -443,6 +446,7 @@ def canonical_list(
 @app.get("/api/canonical/{nmc_id}")
 def canonical_detail(nmc_id: str, db: DbSession = Depends(get_session),
                      _u: User = Depends(current_user)) -> dict:
+    from .standard import describe_nmc
     rec = db.get(CanonicalMaterial, nmc_id.upper())
     if rec is None:
         fail(404, "not_found", f"No canonical material {nmc_id}.")
@@ -455,6 +459,11 @@ def canonical_detail(nmc_id: str, db: DbSession = Depends(get_session),
     ).all()
     return {
         "nmc_id": rec.id, "item_name": rec.item_name, "canonical_text": rec.canonical_text,
+        # Generated from the attributes, and the procurement-facing text. The
+        # canonical_text above is kept because it is what the matcher indexed.
+        "standard_description": rec.standard_description or rec.canonical_text,
+        "family": rec.family,
+        "code_breakdown": describe_nmc(rec.id),
         "item_class": rec.item_class,
         "class_rule": {"label": rule.label, "basis": rule.basis,
                        "bars_auto_match": rule.bars_auto_match} if rule else None,
@@ -869,3 +878,266 @@ def samples(db: DbSession = Depends(get_session),
         "corpus_size": _indexed,
         "organisations": sorted(o.id for o in db.scalars(select(Organisation))),
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# Standardisation, equivalence, procurement and integration.
+#
+# Everything below is additive. No existing endpoint changed shape, because
+# the frontend and the tests both depend on those shapes.
+# ══════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/nmc/{code}/explain")
+def nmc_explain(code: str, _u: User = Depends(current_user)) -> dict:
+    """
+    What a national code says, without a database lookup.
+
+    Deliberately does not touch storage: the point of a structured code is that
+    it can be read on a printed indent by someone with no system access.
+    """
+    from .standard import describe_nmc, validate_nmc
+    ok, reason = validate_nmc(code)
+    return {**describe_nmc(code), "valid": ok, "reason": reason}
+
+
+class EquivalenceRequest(BaseModel):
+    left: str = Field(min_length=3, max_length=40)
+    right: str = Field(min_length=3, max_length=40)
+    service_class: str = Field(default="GENERAL", max_length=40)
+
+
+@app.post("/api/equivalence/compare")
+def equivalence_compare(req: EquivalenceRequest, db: DbSession = Depends(get_session),
+                        _u: User = Depends(current_user)) -> dict:
+    """Can one of these two identities satisfy demand for the other?"""
+    from .equivalence import compare
+    a = db.get(CanonicalMaterial, req.left.upper())
+    b = db.get(CanonicalMaterial, req.right.upper())
+    if a is None:
+        fail(404, "not_found", f"No canonical material {req.left}.")
+    if b is None:
+        fail(404, "not_found", f"No canonical material {req.right}.")
+    r = compare(a.item_name, a.attributes, b.item_name, b.attributes, req.service_class)
+    return {
+        "left": {"id": a.id, "description": a.standard_description or a.canonical_text,
+                 "item_class": a.item_class},
+        "right": {"id": b.id, "description": b.standard_description or b.canonical_text,
+                  "item_class": b.item_class},
+        **r.to_dict(),
+    }
+
+
+@app.get("/api/equivalence/{nmc_id}")
+def equivalence_for(nmc_id: str, service_class: str = "GENERAL",
+                    limit: int = Query(default=25, ge=1, le=100),
+                    db: DbSession = Depends(get_session),
+                    _u: User = Depends(current_user)) -> dict:
+    """
+    Every identity in the same family that this one can substitute, or be
+    substituted by, in the requested service class.
+
+    Scanned within the family only. A bolt is never equivalent to a flange, and
+    comparing across families is a guaranteed negative at O(n) cost.
+    """
+    from .equivalence import Equivalence, compare
+    me = db.get(CanonicalMaterial, nmc_id.upper())
+    if me is None:
+        fail(404, "not_found", f"No canonical material {nmc_id}.")
+
+    peers = db.scalars(
+        select(CanonicalMaterial)
+        .where(CanonicalMaterial.family == me.family,
+               CanonicalMaterial.id != me.id)
+        .limit(4000)).all()
+
+    equivalent, blocked = [], []
+    for p in peers:
+        r = compare(me.item_name, me.attributes, p.item_name, p.attributes, service_class)
+        row = {"id": p.id,
+               "description": p.standard_description or p.canonical_text,
+               "item_class": p.item_class, **r.to_dict()}
+        if r.verdict is Equivalence.FUNCTIONALLY_EQUIVALENT:
+            equivalent.append(row)
+        elif r.verdict is Equivalence.UNDETERMINED:
+            blocked.append(row)
+    return {
+        "canonical_id": me.id,
+        "description": me.standard_description or me.canonical_text,
+        "item_class": me.item_class, "family": me.family,
+        "service_class": service_class,
+        "scanned": len(peers),
+        "functionally_equivalent": equivalent[:limit],
+        "undetermined": blocked[:limit],
+        "note": ("Functional equivalence is a procurement relation, not an "
+                 "identity claim. These remain distinct materials with distinct "
+                 "national codes."),
+    }
+
+
+@app.get("/api/procurement/summary")
+def procurement_summary(db: DbSession = Depends(get_session),
+                        _u: User = Depends(current_user)) -> dict:
+    from . import procure
+    return procure.summary(db)
+
+
+@app.get("/api/procurement/aggregation")
+def procurement_aggregation(service_class: str = "GENERAL",
+                            limit: int = Query(default=20, ge=1, le=100),
+                            db: DbSession = Depends(get_session),
+                            _u: User = Depends(current_user)) -> dict:
+    from . import procure
+    r = procure.aggregation(db, service_class=service_class)
+    r["groups"] = r["groups"][:limit]
+    return r
+
+
+@app.get("/api/procurement/material/{nmc_id}")
+def procurement_material(nmc_id: str, db: DbSession = Depends(get_session),
+                         _u: User = Depends(current_user)) -> dict:
+    """Demand and price history for one identity."""
+    from . import procure
+    if db.get(CanonicalMaterial, nmc_id.upper()) is None:
+        fail(404, "not_found", f"No canonical material {nmc_id}.")
+    demand = procure.load_demand(db)
+    d = demand.get(nmc_id.upper())
+    return {
+        "canonical_id": nmc_id.upper(),
+        "demand": d.to_dict() if d else None,
+        "trend": procure.price_trend(db, nmc_id.upper()),
+    }
+
+
+@app.get("/api/integration/schemas")
+def integration_schemas() -> dict:
+    """
+    The import/export contracts. Public on purpose — a CPSE evaluating whether
+    it can feed this platform should not need an account to read the field list.
+    """
+    from .integration import describe_schemas
+    return describe_schemas()
+
+
+class ValidateRequest(BaseModel):
+    schema_key: str = Field(min_length=3, max_length=80)
+    rows: list[dict] = Field(default_factory=list)
+
+
+@app.post("/api/integration/validate")
+def integration_validate(req: ValidateRequest, _u: User = Depends(current_user)) -> dict:
+    """
+    Dry run. Validates without writing, so a CPSE can fix an extract before it
+    touches the master rather than after.
+    """
+    from .integration import validate_rows
+    if len(req.rows) > 5000:
+        fail(400, "too_many_rows", "Validate at most 5,000 rows per call.")
+    try:
+        return validate_rows(req.schema_key, req.rows).to_dict()
+    except KeyError as e:
+        fail(400, "unknown_schema", str(e).strip("'\""))
+
+
+@app.post("/api/integration/import/procurement")
+async def import_procurement(file: UploadFile,
+                             db: DbSession = Depends(get_session),
+                             user: User = Depends(current_user)) -> dict:
+    """
+    Load historical purchase lines from CSV.
+
+    Validated whole before anything is written: a partially-imported
+    procurement history produces analytics that are wrong in a way nobody can
+    see. Rows referencing an unknown material are reported by row number rather
+    than dropped, because a missing material is a mapping problem the sender
+    needs to know about.
+    """
+    from .authz import require_role
+    from .integration import validate_rows
+    require_role(user, Role.STEWARD, Role.ADMIN)
+
+    raw = (await file.read()).decode("utf-8-sig", errors="replace")
+    if len(raw) > 12_000_000:
+        fail(400, "file_too_large", "Limit is 12 MB per upload.")
+    rows = list(csv.DictReader(io.StringIO(raw)))
+    if not rows:
+        fail(400, "empty_file", "No data rows found.")
+
+    report = validate_rows("procurement_history_import", rows)
+    if not report.ok:
+        return {"imported": 0, "committed": False,
+                "reason": "Validation failed; nothing was written.",
+                **report.to_dict()}
+
+    # Resolve (org, code) -> source record before writing anything.
+    index = {(s.org_id, s.org_code): s.id for s in db.scalars(select(SourceRecord)).all()}
+    unresolved, ready = [], []
+    for i, r in enumerate(report.parsed, start=1):
+        key = (str(r["org_id"]), str(r["material_code"]))
+        sid = index.get(key)
+        if sid is None:
+            unresolved.append({"row": i, "column": "material_code",
+                               "value": str(r["material_code"]),
+                               "problem": f"No material {key[1]} held by {key[0]}."})
+            continue
+        ready.append((r, sid))
+
+    if not ready:
+        return {"imported": 0, "committed": False,
+                "reason": "No row resolved to a known material.",
+                "unresolved": unresolved[:200], "unresolved_count": len(unresolved),
+                **report.to_dict()}
+
+    for r, sid in ready:
+        unit_paise = int(round(float(r["unit_price"]) * 100))
+        qty = float(r["quantity"])
+        db.add(ProcurementRecord(
+            id=f"po-{secrets.token_hex(8)}", org_id=str(r["org_id"]),
+            source_record_id=sid, quantity=qty, uom=str(r.get("uom") or "EA"),
+            unit_price_paise=unit_paise, line_value_paise=int(unit_paise * qty),
+            ordered_on=r["order_date"], supplier=str(r.get("supplier") or ""),
+            plant=str(r.get("plant") or ""),
+            service_class=str(r.get("service_class") or "GENERAL").upper(),
+            po_number=str(r.get("po_number") or ""), provenance="IMPORTED"))
+    service.audit(db, actor=user, action="procurement.import",
+                  detail={"rows": len(ready), "unresolved": len(unresolved)})
+    db.commit()
+    return {"imported": len(ready), "committed": True,
+            "unresolved": unresolved[:200], "unresolved_count": len(unresolved),
+            **report.to_dict()}
+
+
+@app.get("/api/integration/export/unified")
+def export_unified(db: DbSession = Depends(get_session),
+                   user: User = Depends(current_user)):
+    """
+    The unified material master, in the declared export schema.
+
+    Every row keeps the CPSE's ORIGINAL code, so this loads as a cross-reference
+    rather than as a replacement — which is the only form a CPSE would accept.
+    """
+    from .integration import MATERIAL_EXPORT
+    from .standard.codes import parse_nmc
+
+    rows = db.execute(
+        select(CanonicalMaterial, SourceRecord, Mapping)
+        .join(Mapping, Mapping.canonical_id == CanonicalMaterial.id)
+        .join(SourceRecord, SourceRecord.id == Mapping.source_record_id)
+        .where(Mapping.effective_to.is_(None))
+        .order_by(CanonicalMaterial.id)
+    ).all()
+
+    buf = io.StringIO()
+    cols = [c.name for c in MATERIAL_EXPORT.columns]
+    w = csv.writer(buf)
+    w.writerow(cols)
+    for cm, sr, m in rows:
+        parts = parse_nmc(cm.id)
+        w.writerow([
+            cm.id, cm.standard_description or cm.canonical_text,
+            parts.fsc if parts else "", cm.item_name, cm.family, cm.item_class,
+            sr.org_id, sr.org_code, m.status.value,
+            f"{m.confidence:.4f}", json.dumps(cm.attributes, separators=(",", ":")),
+        ])
+    service.audit(db, actor=user, action="export.unified", detail={"rows": len(rows)})
+    return Response(buf.getvalue(), media_type="text/csv", headers={
+        "Content-Disposition": 'attachment; filename="sangam-unified-material-master.csv"'})

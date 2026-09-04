@@ -67,12 +67,19 @@ export type MatchResult = {
 
 export type CanonicalSummary = {
   nmc_id: string; item_name: string; canonical_text: string
+  /** Generated national description; falls back to canonical_text server-side. */
+  standard_description?: string
+  family?: string
   attributes: { code: string; label: string; value: string }[]
   source_count: number; org_count: number; orgs: string[]
 }
 
 export type CanonicalDetail = Omit<CanonicalSummary, 'orgs'> & {
   sources: { record_id: string; org: string; org_code: string; description: string; provenance: string }[]
+  /** Generated from the attributes — the procurement-facing text. */
+  standard_description?: string
+  family?: string
+  code_breakdown?: CodeBreakdown
 }
 
 export type Stats = {
@@ -363,4 +370,119 @@ export const ledger = {
   certificate: (id: string) => get<Certificate>(`/api/decisions/${id}`),
   verify: () => get<{ ok: boolean; checked: number; head?: string; broken_at?: string; note: string }>(
     '/api/decisions/chain/verify'),
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Standardisation, equivalence, procurement, integration.
+   Additive: no existing type changed shape.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+export type CodeSegment = { label: string; value: string; meaning: string; note?: string }
+export type CodeBreakdown = {
+  code: string; valid: boolean; reason: string; legacy?: boolean
+  segments: CodeSegment[]
+}
+
+export type EquivalenceVerdict =
+  'IDENTICAL' | 'FUNCTIONALLY_EQUIVALENT' | 'NOT_EQUIVALENT' | 'UNDETERMINED'
+
+export type EquivalenceDelta = {
+  code: string; left: string; right: string
+  kind: 'interface' | 'substitutable' | 'informational'
+  permitted: boolean; direction: string; reason: string
+}
+
+export type EquivalencePeer = {
+  id: string; description: string; item_class: string
+  verdict: EquivalenceVerdict; service_class: string; summary: string
+  covering: string | null; aggregatable: boolean; deltas: EquivalenceDelta[]
+}
+
+export type EquivalenceReport = {
+  canonical_id: string; description: string; item_class: string; family: string
+  service_class: string; scanned: number
+  functionally_equivalent: EquivalencePeer[]
+  undetermined: EquivalencePeer[]
+  note: string
+}
+
+export type ProcurementSummary = {
+  lines: number; spend: number; organisations: number
+  materials_with_history: number; materials_bought_by_multiple_cpses: number
+  window: { from: string | null; to: string | null }
+  provenance: string; version: string
+}
+
+export type AggregationMember = {
+  canonical_id: string; standard_description: string; item_name: string
+  quantity: number; uom: string; spend: number; avg_unit_price: number
+  organisations: string[]; lines: number
+}
+
+export type AggregationGroup = {
+  key: string; service_class: string; covering_material: string
+  identities: number; organisations: string[]
+  aggregatable_quantity: number; combined_spend: number
+  best_observed_unit_price: number; estimated_opportunity: number
+  basis: string; members: AggregationMember[]
+  rationale: { with: string; verdict: string; covering: string; summary: string }[]
+}
+
+export type AggregationReport = {
+  service_class: string; groups_examined: number
+  aggregation_opportunities: number
+  total_estimated_opportunity: number; total_aggregatable_quantity: number
+  groups: AggregationGroup[]; note: string
+}
+
+export type SchemaColumn = {
+  name: string; required: boolean; type: string; description: string
+  sap_field: string; enum: string[]; max_length: number | null
+}
+export type IntegrationSchemas = {
+  version: string; sap_status: string; sap_status_note: string
+  schemas: Record<string, {
+    key: string; title: string; direction: string; note: string
+    columns: SchemaColumn[]
+  }>
+}
+
+export const standardise = {
+  explainCode: (code: string) =>
+    get<CodeBreakdown>(`/api/nmc/${encodeURIComponent(code)}/explain`),
+  equivalents: (nmc: string, serviceClass = 'GENERAL') =>
+    get<EquivalenceReport>(
+      `/api/equivalence/${encodeURIComponent(nmc)}?service_class=${encodeURIComponent(serviceClass)}`),
+  compare: (left: string, right: string, service_class = 'GENERAL') =>
+    send<EquivalencePeer & { left: unknown; right: unknown }>(
+      '/api/equivalence/compare', { left, right, service_class }),
+}
+
+export const procurement = {
+  summary: () => get<ProcurementSummary>('/api/procurement/summary'),
+  aggregation: (serviceClass = 'GENERAL', limit = 20) =>
+    get<AggregationReport>(
+      `/api/procurement/aggregation?service_class=${encodeURIComponent(serviceClass)}&limit=${limit}`),
+  material: (nmc: string) => get<{
+    canonical_id: string
+    demand: AggregationMember | null
+    trend: {
+      canonical_id: string; orders: number
+      min_unit_price: number | null; max_unit_price: number | null
+      spread_pct: number | null
+      points: { at: string; org: string; unit_price: number; quantity: number; supplier: string }[]
+    }
+  }>(`/api/procurement/material/${encodeURIComponent(nmc)}`),
+}
+
+export const integration = {
+  schemas: () => get<IntegrationSchemas>('/api/integration/schemas'),
+  validate: (schema_key: string, rows: Record<string, string>[]) =>
+    send<{
+      schema: string; ok: boolean; total_rows: number; valid_rows: number
+      rejected_rows: number; error_count: number; warning_count: number
+      errors: { row: number; column: string; value: string; problem: string }[]
+      warnings: { row: number; column: string; value: string; problem: string }[]
+    }>('/api/integration/validate', { schema_key, rows }),
+  exportUnifiedUrl: () => `${BASE}/api/integration/export/unified`,
 }
