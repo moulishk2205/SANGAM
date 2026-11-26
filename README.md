@@ -213,23 +213,29 @@ The complete, line-by-line self-audit (what exists, what is partial, what is not
 ## Architecture
 
 ```mermaid
-flowchart LR
-    A["CPSE material masters<br/><i>messy · truncated · abbreviated</i>"] --> B["Normalise<br/>gazetteer gaz-v2"]
-    B --> C["Classify + extract<br/>template-v2"]
-    C --> D["Hybrid retrieval<br/>TF-IDF ⊕ bge embeddings · RRF"]
-    D --> E["Compare attributes<br/>AGREE · DISAGREE · UNKNOWN"]
-    E --> F{"CRITICAL<br/>disagreement?"}
-    F -- yes --> G["DISTINCT<br/>score = 0, always"]
-    F -- no --> H["Learned scorer<br/>12 features + isotonic calibration"]
-    H --> I{"every CRITICAL<br/>attribute stated?"}
-    I -- no --> J["REVIEW_REQUIRED<br/>abstain"]
-    I -- yes --> K["MATCH / NEAR_MATCH"]
-    K --> L["Scoped human approval"]
-    J --> L
-    L --> M["Hash-chained certificate"]
-    M --> N["Canonical identity<br/>NMC + standard description"]
-    N --> O["Functional equivalence"]
-    O --> P["Procurement aggregation"]
+flowchart TB
+    subgraph READ["① Read the specification"]
+      direction LR
+      A["CPSE description<br/><i>messy · truncated · abbreviated</i>"] --> B["Normalise<br/>gazetteer gaz-v2"] --> C["Classify + extract<br/>typed, unit-canonical attributes"]
+    end
+    subgraph DECIDE["② Retrieve, compare, veto"]
+      direction LR
+      D["Hybrid retrieval<br/>TF-IDF ⊕ bge embeddings · RRF"] --> E["Compare attributes<br/>AGREE · DISAGREE · UNKNOWN"] --> F{"CRITICAL<br/>disagreement?"}
+      F -- yes --> G["DISTINCT<br/>score = 0, always"]
+    end
+    subgraph SCORE["③ Score, or abstain"]
+      direction LR
+      H["Learned scorer<br/>12 features · isotonic calibration"] --> I{"every CRITICAL<br/>attribute stated?"}
+      I -- yes --> K["MATCH · NEAR_MATCH"]
+      I -- no --> J["REVIEW_REQUIRED<br/>abstain"]
+    end
+    subgraph GOVERN["④ Govern, then use"]
+      direction LR
+      L["Scoped human<br/>approval"] --> M["Hash-chained<br/>certificate"] --> N["Canonical identity<br/>NMC + standard description"] --> O["Functional<br/>equivalence"] --> P["Procurement<br/>aggregation"]
+    end
+    READ --> DECIDE
+    DECIDE -- "no veto" --> SCORE
+    SCORE --> GOVERN
 
     classDef veto fill:#ff6b5b22,stroke:#ff6b5b,color:#ff6b5b
     classDef good fill:#3ccfa422,stroke:#3ccfa4
@@ -292,10 +298,10 @@ sequenceDiagram
 
 ```text
 NMC-5306-SS-0100-ADT
-    │    │  │    └── discriminator (blake2s over the full attribute set) + check character
-    │    │  └─────── primary dimension, tenths of a millimetre  (0100 = 10.0 mm)
-    │    └────────── material class                              (SS = stainless steel)
-    └─────────────── NATO Federal Supply Classification           (5306 = Bolts)
+    │    │  │    └─────  discriminator + check char   blake2s over every attribute
+    │    │  └──────────  primary dimension, 0.1 mm    0100 = 10.0 mm
+    │    └─────────────  material class               SS   = stainless steel
+    └──────────────────  Federal Supply Class (NATO)  5306 = Bolts
 ```
 
 Deterministic (a pure function of the attributes, with no counter and no database lookup), readable on paper, and
@@ -331,7 +337,7 @@ There are **two** models, and keeping them apart is the point:
 | **Can it decide identity?** | Never | Never alone, and it cannot overrule the veto |
 
 $$
-p(\text{match}) \;=\; v \cdot \operatorname{iso}\!\big(\sigma(\mathbf{w}^{\top}\mathbf{x} + b)\big),
+p(\text{match}) \;=\; v \cdot \mathrm{iso}\big(\sigma(\mathbf{w}^{\top}\mathbf{x} + b)\big),
 \qquad v = \begin{cases} 0 & \text{a CRITICAL attribute disagrees} \\ 1 & \text{otherwise} \end{cases}
 $$
 
