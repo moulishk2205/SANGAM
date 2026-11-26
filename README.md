@@ -336,10 +336,10 @@ There are **two** models, and keeping them apart is the point:
 | **Job** | Propose candidates | Turn evidence into a calibrated probability |
 | **Can it decide identity?** | Never | Never alone, and it cannot overrule the veto |
 
-$$
-p(\text{match}) \;=\; v \cdot \mathrm{iso}\big(\sigma(\mathbf{w}^{\top}\mathbf{x} + b)\big),
-\qquad v = \begin{cases} 0 & \text{a CRITICAL attribute disagrees} \\ 1 & \text{otherwise} \end{cases}
-$$
+```math
+p(\text{match}) = v \cdot \mathrm{iso}\big(\sigma(\mathbf{w}^{\top}\mathbf{x} + b)\big),
+\qquad v = \begin{cases} 0 & \text{if a CRITICAL attribute disagrees} \\ 1 & \text{otherwise} \end{cases}
+```
 
 The veto $v$ multiplies **last** and is **not one of the twelve features**, so no weight can learn to outvote it.
 
