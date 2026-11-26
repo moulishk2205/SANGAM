@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560" role="img" aria-labelledby="vt vd">
+  <title id="vt">The veto — why text similarity cannot decide identity</title>
+  <desc id="vd">Query MS HEX BOLT M10 X 75. Six candidates all score above 0.96 text similarity. Three are the same part and match; three differ on a critical attribute (thread diameter, material, length) and SANGAM scores them exactly zero.</desc>
+  <style>
+    .tbar, .sm, .sv { transform-box: fill-box; transform-origin: left center; }
+    .tbar { animation: grow 10s cubic-bezier(.2,.7,.2,1) infinite; }
+    @keyframes grow { 0% { transform: scaleX(0); } 12% { transform: scaleX(1); } 94% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+    .tval { animation: fadein 10s linear infinite; }
+    @keyframes fadein { 0%, 10% { opacity: 0; } 14%, 94% { opacity: 1; } 100% { opacity: 0; } }
+    .sm { animation: sm 10s cubic-bezier(.2,.7,.2,1) infinite; }
+    @keyframes sm { 0%, 18% { transform: scaleX(0); } 30%, 94% { transform: scaleX(1); opacity: 1; } 100% { opacity: 0; } }
+    .sv { animation: sv 10s cubic-bezier(.2,.7,.2,1) infinite; }
+    @keyframes sv { 0%, 18% { transform: scaleX(0); } 30% { transform: scaleX(1); } 40% { transform: scaleX(1); } 44%, 100% { transform: scaleX(0); } }
+    .mval { animation: mval 10s linear infinite; }
+    @keyframes mval { 0%, 28% { opacity: 0; } 33%, 94% { opacity: 1; } 100% { opacity: 0; } }
+    .zval, .tagv { animation: zval 10s linear infinite; }
+    @keyframes zval { 0%, 44% { opacity: 0; } 48%, 94% { opacity: 1; } 100% { opacity: 0; } }
+    .tagm { animation: mval 10s linear infinite; }
+    .flash { animation: flash 10s ease-out infinite; }
+    @keyframes flash { 0%, 41% { opacity: 0; } 43% { opacity: .28; } 52%, 100% { opacity: 0; } }
+    .note { animation: fadein2 10s linear infinite; }
+    @keyframes fadein2 { 0%, 50% { opacity: 0; } 56%, 94% { opacity: 1; } 100% { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .tbar, .sm, .tval, .mval, .zval, .tagv, .tagm, .note { animation: none !important; opacity: 1; transform: none; }
+      .sv { animation: none !important; transform: scaleX(0); }
+    }
+  </style>
+  <rect width="1200" height="560" rx="22" fill="#0f1214"/>
+  <rect x="0.5" y="0.5" width="1199" height="559" rx="21.5" fill="none" stroke="#2a3135"/>
+
+  <text x="40" y="62" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Inter','Helvetica Neue',Arial,sans-serif" font-size="26" font-weight="700" fill="#e9eef0">Six look-alikes. Three different parts.</text>
+  <text x="40" y="92" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Inter','Helvetica Neue',Arial,sans-serif" font-size="16" fill="#8a969c">Live engine output. A similarity threshold merges all six into the national master; SANGAM refuses three.</text>
+  <g font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="13">
+    <rect x="852" y="40" width="308" height="34" rx="9" fill="#1f2629" stroke="#2a3135"/>
+    <text x="868" y="62" fill="#8a969c">query</text>
+    <text x="922" y="62" fill="#e9eef0" font-weight="700">MS HEX BOLT M10 X 75</text>
+  </g>
+
+  <g font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="11" letter-spacing="1.4" fill="#5b666c">
+    <text x="62" y="130">CANDIDATE RETRIEVED</text>
+    <text x="380" y="130">TEXT SIMILARITY</text>
+    <text x="640" y="130">SANGAM SCORE</text>
+    <text x="900" y="130">DECISION</text>
+  </g>
+  
+  <g>
+    <rect x="40" y="144" width="1120" height="46" rx="10" fill="#1a1f22" stroke="#2a3135"/>
+    <rect class="none" style="animation-delay:0.00s" x="40" y="144" width="1120" height="46" rx="10" fill="#ff6b5b" opacity="0"/>
+    <text x="62" y="173" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="15" fill="#e9eef0">BOLT HEX MS M10 X 75 MM</text>
+    <rect x="380" y="162" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="tbar" style="animation-delay:0.00s" x="380" y="162" width="167.6" height="12" rx="6" fill="#f2b84b"/>
+    <text class="tval" style="animation-delay:0.00s" x="562" y="172" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#f2b84b">0.986</text>
+    <rect x="640" y="162" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="sm" style="animation-delay:0.00s" x="640" y="162" width="170.0" height="12" rx="6" fill="#3ccfa4"/>
+    <text class="mval" style="animation-delay:0.00s" x="822" y="172" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" font-weight="700" fill="#3ccfa4">1.000</text>
+    <g class="tagm" style="animation-delay:0.00s"><rect x="900" y="154" width="70" height="24" rx="6" fill="none" stroke="#3ccfa4"/><text x="935" y="171" text-anchor="middle" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#3ccfa4">MATCH</text><text x="982" y="171" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#8a969c">same part</text></g>
+  </g>
+  <g>
+    <rect x="40" y="198" width="1120" height="46" rx="10" fill="#1a1f22" stroke="#2a3135"/>
+    <rect class="flash" style="animation-delay:0.10s" x="40" y="198" width="1120" height="46" rx="10" fill="#ff6b5b" opacity="0"/>
+    <text x="62" y="227" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="15" fill="#e9eef0">MS HEX BOLT M12 X 75</text>
+    <rect x="380" y="216" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="tbar" style="animation-delay:0.10s" x="380" y="216" width="168.3" height="12" rx="6" fill="#f2b84b"/>
+    <text class="tval" style="animation-delay:0.10s" x="562" y="226" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#f2b84b">0.990</text>
+    <rect x="640" y="216" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="sv" style="animation-delay:0.10s" x="640" y="216" width="141.1" height="12" rx="6" fill="#ff6b5b"/>
+    <text class="zval" style="animation-delay:0.10s" x="822" y="226" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" font-weight="700" fill="#ff6b5b">0.000</text>
+    <g class="tagv" style="animation-delay:0.10s"><rect x="900" y="208" width="62" height="24" rx="6" fill="#ff6b5b"/><text x="931" y="225" text-anchor="middle" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#1a1f22">VETO</text><text x="974" y="225" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#ff6b5b">thread Ø  10 ≠ 12 mm</text></g>
+  </g>
+  <g>
+    <rect x="40" y="252" width="1120" height="46" rx="10" fill="#1a1f22" stroke="#2a3135"/>
+    <rect class="none" style="animation-delay:0.20s" x="40" y="252" width="1120" height="46" rx="10" fill="#ff6b5b" opacity="0"/>
+    <text x="62" y="281" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="15" fill="#e9eef0">BOLT HEX MS M10*75</text>
+    <rect x="380" y="270" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="tbar" style="animation-delay:0.20s" x="380" y="270" width="168.4" height="12" rx="6" fill="#f2b84b"/>
+    <text class="tval" style="animation-delay:0.20s" x="562" y="280" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#f2b84b">0.990</text>
+    <rect x="640" y="270" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="sm" style="animation-delay:0.20s" x="640" y="270" width="165.8" height="12" rx="6" fill="#3ccfa4"/>
+    <text class="mval" style="animation-delay:0.20s" x="822" y="280" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" font-weight="700" fill="#3ccfa4">0.975</text>
+    <g class="tagm" style="animation-delay:0.20s"><rect x="900" y="262" width="70" height="24" rx="6" fill="none" stroke="#3ccfa4"/><text x="935" y="279" text-anchor="middle" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#3ccfa4">MATCH</text><text x="982" y="279" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#8a969c">same part</text></g>
+  </g>
+  <g>
+    <rect x="40" y="306" width="1120" height="46" rx="10" fill="#1a1f22" stroke="#2a3135"/>
+    <rect class="flash" style="animation-delay:0.30s" x="40" y="306" width="1120" height="46" rx="10" fill="#ff6b5b" opacity="0"/>
+    <text x="62" y="335" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="15" fill="#e9eef0">CS HEX BOLT M10X75</text>
+    <rect x="380" y="324" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="tbar" style="animation-delay:0.30s" x="380" y="324" width="163.7" height="12" rx="6" fill="#f2b84b"/>
+    <text class="tval" style="animation-delay:0.30s" x="562" y="334" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#f2b84b">0.963</text>
+    <rect x="640" y="324" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="sv" style="animation-delay:0.30s" x="640" y="324" width="141.1" height="12" rx="6" fill="#ff6b5b"/>
+    <text class="zval" style="animation-delay:0.30s" x="822" y="334" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" font-weight="700" fill="#ff6b5b">0.000</text>
+    <g class="tagv" style="animation-delay:0.30s"><rect x="900" y="316" width="62" height="24" rx="6" fill="#ff6b5b"/><text x="931" y="333" text-anchor="middle" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#1a1f22">VETO</text><text x="974" y="333" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#ff6b5b">material  MS ≠ CS</text></g>
+  </g>
+  <g>
+    <rect x="40" y="360" width="1120" height="46" rx="10" fill="#1a1f22" stroke="#2a3135"/>
+    <rect class="none" style="animation-delay:0.40s" x="40" y="360" width="1120" height="46" rx="10" fill="#ff6b5b" opacity="0"/>
+    <text x="62" y="389" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="15" fill="#e9eef0">MS HEX BOLT M10 X 75 GR A2-70</text>
+    <rect x="380" y="378" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="tbar" style="animation-delay:0.40s" x="380" y="378" width="165.5" height="12" rx="6" fill="#f2b84b"/>
+    <text class="tval" style="animation-delay:0.40s" x="562" y="388" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#f2b84b">0.974</text>
+    <rect x="640" y="378" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="sm" style="animation-delay:0.40s" x="640" y="378" width="165.0" height="12" rx="6" fill="#3ccfa4"/>
+    <text class="mval" style="animation-delay:0.40s" x="822" y="388" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" font-weight="700" fill="#3ccfa4">0.971</text>
+    <g class="tagm" style="animation-delay:0.40s"><rect x="900" y="370" width="70" height="24" rx="6" fill="none" stroke="#3ccfa4"/><text x="935" y="387" text-anchor="middle" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#3ccfa4">MATCH</text><text x="982" y="387" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#8a969c">same part</text></g>
+  </g>
+  <g>
+    <rect x="40" y="414" width="1120" height="46" rx="10" fill="#1a1f22" stroke="#2a3135"/>
+    <rect class="flash" style="animation-delay:0.50s" x="40" y="414" width="1120" height="46" rx="10" fill="#ff6b5b" opacity="0"/>
+    <text x="62" y="443" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="15" fill="#e9eef0">MS HEX BOLT M10 X 50</text>
+    <rect x="380" y="432" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="tbar" style="animation-delay:0.50s" x="380" y="432" width="165.1" height="12" rx="6" fill="#f2b84b"/>
+    <text class="tval" style="animation-delay:0.50s" x="562" y="442" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#f2b84b">0.971</text>
+    <rect x="640" y="432" width="170" height="12" rx="6" fill="#2a3135"/>
+    <rect class="sv" style="animation-delay:0.50s" x="640" y="432" width="141.1" height="12" rx="6" fill="#ff6b5b"/>
+    <text class="zval" style="animation-delay:0.50s" x="822" y="442" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" font-weight="700" fill="#ff6b5b">0.000</text>
+    <g class="tagv" style="animation-delay:0.50s"><rect x="900" y="424" width="62" height="24" rx="6" fill="#ff6b5b"/><text x="931" y="441" text-anchor="middle" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12" font-weight="700" fill="#1a1f22">VETO</text><text x="974" y="441" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="12.5" fill="#ff6b5b">length  75 ≠ 50 mm</text></g>
+  </g>
+
+  <text class="note" x="40" y="500" font-family="ui-monospace,'SFMono-Regular','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace" font-size="13" fill="#8a969c">p(match) = <tspan fill="#ff6b5b">veto</tspan> × calibrate(σ(w·x + b))   — the veto multiplies last and is not a feature, so nothing can outvote it.</text>
+</svg>
