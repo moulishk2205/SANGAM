@@ -431,9 +431,12 @@ UI and the schema endpoint say. Do not upgrade the claim in a pitch.
 
 ## 13. Working agreements
 
-- Never commit datasets, `.env`, credentials, or `sangam.db`.
+- Never commit raw datasets, `.env`, credentials, or `sangam.db`. Raw FLIS data
+  lives on the `data-v1` GitHub release (`scripts/fetch_data.sh`); the only
+  data in git is the generated training set in `datasets/training/` and the
+  clean snapshot `db/sangam_seed.db`.
 - Never run a broad `git add -A` from the home directory.
-- Commits are authored `Claude <noreply@anthropic.com>` (repo convention; git
-  identity is unset, so pass `-c user.name=… -c user.email=…` per command).
+- Commits are authored by Chandramoulishwarar (`moulishk2205`) — the sole
+  contributor. The repo-local git identity is set to that account.
 - Verify claims by running things. The numbers in §3 come from
   `scripts/evaluate.py`, not from memory.

@@ -1,0 +1,60 @@
+{
+  "description": "Training data for the SANGAM learned match scorer. Synthetic; labels correct by construction.",
+  "generator": "scripts/export_training_data.py",
+  "args": {
+    "specs": 600,
+    "variants": 3,
+    "top_k": 12,
+    "no_embeddings": false
+  },
+  "split_seed": 20260902,
+  "split_ratios": [
+    0.6,
+    0.2,
+    0.2
+  ],
+  "split_unit": "identity (spec_key), never record",
+  "dense_channel": true,
+  "engine_version": "nmc-mvp-0.1/gaz-v2/template-v2",
+  "gazetteer_version": "gaz-v2",
+  "template_version": "template-v2",
+  "records": 1800,
+  "identities": 600,
+  "features": [
+    "attribute_agreement",
+    "text_max",
+    "semantic",
+    "lexical",
+    "text_gap",
+    "frac_agree",
+    "frac_disagree",
+    "frac_unknown",
+    "crit_known_frac",
+    "crit_agree_frac",
+    "n_rows",
+    "same_item_name"
+  ],
+  "pairs": {
+    "train": {
+      "rows": 12960,
+      "positives": 1932,
+      "vetoed": 10754
+    },
+    "val": {
+      "rows": 4320,
+      "positives": 640,
+      "vetoed": 3563
+    },
+    "test": {
+      "rows": 4320,
+      "positives": 653,
+      "vetoed": 3589
+    }
+  },
+  "sha256": {
+    "corpus.csv": "e8ae3c0cc98dac5c704951bf3a71f2fce6db50900e49f388e1180e6ebec82fdf",
+    "pairs_train.csv": "2a260e4c0ed767c693b6ff1c28a095d7afafa3cee5837dcdce7eee9d69f1b979",
+    "pairs_val.csv": "18e6781e906bf9d692daf872ad55b6eb8838063b0230b53a1d94a3b0346879f6",
+    "pairs_test.csv": "a639e95c029228482a318efd43b91d51ffa2ffe536e1e3a38ac9c2b67375572c"
+  }
+}
