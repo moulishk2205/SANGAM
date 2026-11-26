@@ -377,11 +377,11 @@ Recall is lower **by design**: 7.4% of true matches moved from *auto-assert* to 
 false positives went to **zero**, and 98.77% of true matches still reach a human or better.
 
 Clean synthetic data is saturated, so the model was also stress-tested by deleting words from descriptions on purpose,
-the way real entries get truncated:
+the way real entries get truncated. **Bars: hand-tuned formula · line: learned scorer.**
 
 ```mermaid
 xychart-beta
-    title "MATCH precision as words are dropped (bars: hand-tuned · line: learned)"
+    title "MATCH precision as words are dropped"
     x-axis "share of tokens dropped" ["0%", "20%", "40%", "60%"]
     y-axis "precision (%)" 0 --> 100
     bar [99.5, 27.2, 9.4, 4.7]
